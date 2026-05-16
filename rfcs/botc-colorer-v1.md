@@ -13,6 +13,7 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
 - **Solver**: pure TypeScript function with a dedicated web worker wrapper.
 - **Testing**: Vitest for solver and helper logic; Playwright for a mobile workflow smoke test.
 - **PWA**: `vite-plugin-pwa`, manifest metadata, and generated service worker.
+- **Deployment**: GitHub Actions workflow publishes the built `dist/` artifact to GitHub Pages under the repository base path, with `404.html` mirroring `index.html` for SPA route fallback.
 
 ## Observable behavior to preserve
 
@@ -52,3 +53,6 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - `npm run lint`
   - `npm run build`
   - `npm run test`
+- Deployment fix:
+  - GitHub Pages had been serving the repository root, which exposed raw source files such as `/src/main.tsx` and produced a blank page in browsers.
+  - The fix switches deployment to an Actions-built Pages artifact, sets the repository base path for Vite and PWA metadata, and emits `404.html` for deep-link fallback on GitHub Pages.

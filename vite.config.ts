@@ -2,13 +2,17 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
-import { manifest } from './src/pwa/manifest'
+import { createManifest } from './src/pwa/manifest'
+
+const appBase = process.env.VITE_APP_BASE ?? '/'
 
 export default defineConfig({
+  base: appBase,
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
+      base: appBase,
       registerType: 'autoUpdate',
       manifestFilename: 'manifest.webmanifest',
       includeAssets: [
@@ -16,7 +20,7 @@ export default defineConfig({
         'icons/icon-512.png',
         'icons/icon-maskable.png',
       ],
-      manifest,
+      manifest: createManifest(appBase),
       workbox: {
         globPatterns: ['**/*.{css,html,ico,js,png,svg,webmanifest}'],
       },

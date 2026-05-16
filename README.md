@@ -26,6 +26,25 @@ npm run build
 npm run test
 ```
 
+## GitHub Pages deployment
+
+The site is deployed by the GitHub Actions workflow in `.github/workflows/deploy-pages.yml`.
+
+- The Pages build uses `VITE_APP_BASE=/botc_colorer/` so assets, router basename, and PWA metadata resolve under the repository path.
+- `npm run build` also writes `dist/404.html` from `dist/index.html` so direct navigation to SPA routes keeps working on GitHub Pages.
+
+After the workflow runs, open:
+
+`https://misha-antonenko.github.io/botc_colorer/`
+
+## Usage
+
+1. Open the app URL.
+2. Tap **New game**.
+3. Configure players and blue-count bounds in **Setup**.
+4. Add dyadic and conditional observations in **Transactions**.
+5. Review the matrix in **State** and ranked colorings in **Solutions**.
+
 ## Key features
 
 - Games list with duplicate, export, import, and snapshot restore.
