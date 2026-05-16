@@ -8,6 +8,7 @@ interface SwipeActionRowProps {
 }
 
 const SWIPE_ACTION_WIDTH = 88
+const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH / 3
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return (
@@ -89,7 +90,7 @@ export function SwipeActionRow({
     event.currentTarget.releasePointerCapture?.(event.pointerId)
     releasePointer()
 
-    if (!actionDisabled && offsetRef.current <= -SWIPE_ACTION_WIDTH / 2) {
+    if (!actionDisabled && offsetRef.current <= -SWIPE_OPEN_THRESHOLD) {
       openRow()
       return
     }
@@ -98,7 +99,7 @@ export function SwipeActionRow({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl">
+    <div className="relative w-full overflow-hidden rounded-3xl">
       <div
         className={`absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500/15 transition-opacity ${
           offset < 0 && !actionDisabled ? 'opacity-100' : 'opacity-0'
@@ -118,7 +119,9 @@ export function SwipeActionRow({
         </button>
       </div>
       <div
-        className={`relative touch-pan-y ${isDragging ? '' : 'transition-transform duration-200 ease-out'}`}
+        className={`relative w-full touch-pan-y ${
+          isDragging ? '' : 'transition-transform duration-200 ease-out'
+        }`}
         style={{
           transform: `translateX(${offset}px)`,
         }}

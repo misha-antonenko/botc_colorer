@@ -55,3 +55,20 @@ test('game export triggers a download', async ({ page }) => {
 
   expect(download.suggestedFilename()).toMatch(/\.json$/)
 })
+
+test('setup stays mobile-friendly', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'New game' }).click()
+
+  const playerNameInput = page.getByLabel('Player 1 name')
+  await expect(playerNameInput).toHaveCSS('font-size', '16px')
+  await expect(page.getByText('Allowed blue totals (inclusive): 0-5')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Add player' }).click()
+
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }))
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1)
+})

@@ -68,3 +68,8 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - Setup player cards now use the same swipe-delete affordance, place the fixed-color control inline with the player name, and stretch the drag handle along the right edge.
   - Signed weight fields use permissive text inputs so `+` and `-` remain typeable on iOS.
   - The `f` matrix uses tighter cell sizing, and solution color cells now include tiny player initials.
+- Third device-polish pass:
+  - Setup player cards are compact again: the fixed-color control is now a small swatch button, the name input no longer forces horizontal overflow, and the swipe row exposes a dedicated non-input seat area plus a shorter open threshold.
+  - The blue-count tile now shows inline min/max fields, explicit inclusive allowed totals, and numeric chips instead of unlabeled bars; impossible counts above the player count are normalized away on blur instead of being persisted.
+  - Solver breakdown entries now share the same signed-equation satisfaction logic as the fitness computation, so negative-weight equations only show as satisfied when the players differ and their displayed contribution sign matches the score.
+  - Regression coverage now includes negative-weight solver/breakdown tests, a direct pointer-event test for swipe-to-delete, and a mobile Playwright check for setup layout and input sizing.

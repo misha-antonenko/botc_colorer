@@ -20,7 +20,7 @@ export function PlayerPicker({
       <span>{label}</span>
       <select
         aria-label={label}
-        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
         value={value}
         disabled={disabled || players.length === 0}
         onChange={(event) => onChange(event.target.value)}

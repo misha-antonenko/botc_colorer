@@ -72,6 +72,15 @@ function sameColor(coloring: number, i: number, j: number): boolean {
   return isBlueAt(coloring, i) === isBlueAt(coloring, j)
 }
 
+function isEquationSatisfied(coloring: number, i: number, j: number, weight: number): boolean {
+  const hasSameColor = sameColor(coloring, i, j)
+  return weight > 0 ? hasSameColor : !hasSameColor
+}
+
+function getEquationContribution(coloring: number, i: number, j: number, weight: number): number {
+  return isEquationSatisfied(coloring, i, j, weight) ? Math.abs(weight) : -Math.abs(weight)
+}
+
 function normalizeEquationWeight(weight: number): number {
   if (!Number.isFinite(weight) || weight === 0) {
     throw new Error('Equation weights must be finite and nonzero')
@@ -187,7 +196,7 @@ export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
     let fitness = 0
 
     for (const pair of dyadicPairs) {
-      fitness += sameColor(coloring, pair.i, pair.j) ? pair.weight : -pair.weight
+      fitness += getEquationContribution(coloring, pair.i, pair.j, pair.weight)
     }
 
     for (const conditional of conditionals) {
@@ -196,9 +205,7 @@ export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
       }
 
       for (const equation of conditional.equations) {
-        fitness += sameColor(coloring, equation.i, equation.j)
-          ? equation.weight
-          : -equation.weight
+        fitness += getEquationContribution(coloring, equation.i, equation.j, equation.weight)
       }
     }
 
@@ -237,7 +244,7 @@ export function buildColoringContributionBreakdown(
       const i = getPlayerIndex(positions, tx.active)
       const j = getPlayerIndex(positions, tx.passive)
       const weight = normalizeEquationWeight(tx.weight)
-      const satisfied = sameColor(coloring, i, j)
+      const satisfied = isEquationSatisfied(coloring, i, j, weight)
 
       contributions.push({
         id: `${tx.id}:dyadic`,
@@ -247,7 +254,7 @@ export function buildColoringContributionBreakdown(
         j: tx.passive,
         weight,
         satisfied,
-        contribution: satisfied ? weight : -weight,
+        contribution: getEquationContribution(coloring, i, j, weight),
         active: true,
       })
 
@@ -265,7 +272,7 @@ export function buildColoringContributionBreakdown(
       const i = getPlayerIndex(positions, equation.i)
       const j = getPlayerIndex(positions, equation.j)
       const weight = normalizeEquationWeight(equation.weight)
-      const satisfied = sameColor(coloring, i, j)
+      const satisfied = isEquationSatisfied(coloring, i, j, weight)
 
       contributions.push({
         id: `${tx.id}:conditional:${equationIndex}`,
@@ -275,7 +282,7 @@ export function buildColoringContributionBreakdown(
         j: equation.j,
         weight,
         satisfied,
-        contribution: satisfied ? weight : -weight,
+        contribution: getEquationContribution(coloring, i, j, weight),
         active: true,
       })
     })

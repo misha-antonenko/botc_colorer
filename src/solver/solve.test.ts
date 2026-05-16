@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { solveGame } from './solve'
+import { buildColoringContributionBreakdown, solveGame } from './solve'
 import { createConditionalTxFixture, createDyadicTxFixture, createGameFixture, createPlayers } from '../test/fixtures'
 
 describe('solveGame', () => {
@@ -82,6 +82,26 @@ describe('solveGame', () => {
     expect(results.find((result) => result.c === 5)?.fitness).toBe(-1)
   })
 
+  it('treats negative weights as inequality preferences', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const transaction = createDyadicTxFixture({
+      active: players[0].id,
+      passive: players[1].id,
+      weight: -1,
+      gameId: game.id,
+    })
+
+    const results = solveGame(game, [transaction])
+
+    expect(results).toEqual([
+      { c: 1, fitness: 1 },
+      { c: 2, fitness: 1 },
+      { c: 3, fitness: -1 },
+      { c: 0, fitness: -1 },
+    ])
+  })
+
   it('prunes fixed colors', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({
@@ -144,5 +164,62 @@ describe('solveGame', () => {
     const results = solveGame(game, [])
 
     expect(results.map((result) => result.c)).toEqual([3, 1, 2, 0])
+  })
+})
+
+describe('buildColoringContributionBreakdown', () => {
+  it('marks negative dyadic equations satisfied only when colors differ', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const transaction = createDyadicTxFixture({
+      id: 'tx-negative-dyadic',
+      active: players[0].id,
+      passive: players[1].id,
+      weight: -1,
+      gameId: game.id,
+    })
+
+    const satisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 1)
+    const unsatisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 3)
+
+    expect(satisfiedBreakdown).toEqual([
+      expect.objectContaining({
+        satisfied: true,
+        contribution: 1,
+      }),
+    ])
+    expect(unsatisfiedBreakdown).toEqual([
+      expect.objectContaining({
+        satisfied: false,
+        contribution: -1,
+      }),
+    ])
+  })
+
+  it('marks negative conditional equations satisfied only when colors differ', () => {
+    const players = createPlayers(['Alice', 'Bob', 'Carol'])
+    const game = createGameFixture({ players })
+    const transaction = createConditionalTxFixture({
+      id: 'tx-negative-conditional',
+      gameId: game.id,
+      condition: { playerId: players[0].id, color: 'blue' },
+      equations: [{ i: players[1].id, j: players[2].id, weight: -2 }],
+    })
+
+    const satisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 5)
+    const unsatisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 7)
+
+    expect(satisfiedBreakdown).toEqual([
+      expect.objectContaining({
+        satisfied: true,
+        contribution: 2,
+      }),
+    ])
+    expect(unsatisfiedBreakdown).toEqual([
+      expect.objectContaining({
+        satisfied: false,
+        contribution: -2,
+      }),
+    ])
   })
 })

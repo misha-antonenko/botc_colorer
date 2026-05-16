@@ -51,6 +51,10 @@ function cycleColor(currentColor: Color | null): Color | null {
 }
 
 function validateBlueRange(game: Game): string | null {
+  if (game.blueCountMin > game.players.length || game.blueCountMax > game.players.length) {
+    return 'Blue counts cannot exceed the player count.'
+  }
+
   if (game.blueCountMin > game.blueCountMax) {
     return 'Blue minimum cannot exceed the maximum.'
   }
@@ -74,6 +78,20 @@ function parseCountInput(value: string): number | null {
 
 function isDigitsOnly(value: string): boolean {
   return /^\d*$/.test(value)
+}
+
+function clampBlueCount(value: number, playerCount: number): number {
+  return Math.max(0, Math.min(value, playerCount))
+}
+
+function formatAllowedBlueTotals(min: number, max: number, isValid: boolean): string {
+  if (!isValid) {
+    return 'No blue totals currently allowed.'
+  }
+
+  return min === max
+    ? `Allowed blue totals (inclusive): ${min}`
+    : `Allowed blue totals (inclusive): ${min}-${max}`
 }
 
 function reorderPlayers(players: Player[], activeId: string, overId: string): Player[] {
@@ -106,6 +124,14 @@ function SortablePlayerCard({
   } = useSortable({ id: player.id })
   const fixedColorLabel =
     player.fixedColor === null ? 'Unknown' : player.fixedColor === 'blue' ? 'Blue' : 'Red'
+  const fixedColorShortLabel =
+    player.fixedColor === null ? '?' : player.fixedColor === 'blue' ? 'B' : 'R'
+  const fixedColorClasses =
+    player.fixedColor === 'blue'
+      ? 'border-blue-300/50 bg-blue-500 text-white'
+      : player.fixedColor === 'red'
+        ? 'border-red-300/50 bg-red-500 text-white'
+        : 'border-slate-700 bg-slate-950 text-slate-200'
 
   return (
     <SwipeActionRow
@@ -115,7 +141,7 @@ function SortablePlayerCard({
     >
       <div
         ref={setNodeRef}
-        className={`rounded-2xl border border-slate-800 bg-slate-900/70 p-3 ${
+        className={`w-full min-w-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-2.5 ${
           isDragging ? 'shadow-2xl shadow-blue-500/20 ring-1 ring-blue-400/40' : ''
         }`}
         style={{
@@ -123,30 +149,33 @@ function SortablePlayerCard({
           transition,
         }}
       >
-        <div className="grid grid-cols-[1fr_auto] items-stretch gap-3">
-          <div className="space-y-2">
-            <div className="text-xs text-slate-400">Seat {index + 1}</div>
-            <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+          <div
+            aria-label={`Seat ${index + 1}`}
+            className="flex h-10 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-[10px] leading-tight text-slate-400"
+          >
+            <span className="uppercase tracking-wide">Seat</span>
+            <span className="text-sm font-semibold text-slate-200">{index + 1}</span>
+          </div>
+
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${fixedColorClasses}`}
+              title={fixedColorLabel}
+              onClick={onToggleColor}
+            >
+              {fixedColorShortLabel}
+            </button>
+
+            <div className="min-w-0 flex-1">
               <input
                 aria-label={`Player ${index + 1} name`}
-                className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                className="min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-base text-slate-100"
                 value={player.name}
                 onChange={(event) => onNameChange(event.target.value)}
               />
-              <button
-                type="button"
-                aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
-                className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium ${
-                  player.fixedColor === 'blue'
-                    ? 'bg-blue-500 text-white'
-                    : player.fixedColor === 'red'
-                      ? 'bg-red-500 text-white'
-                      : 'border border-slate-700 bg-slate-950 text-slate-200'
-                }`}
-                onClick={onToggleColor}
-              >
-                {fixedColorLabel}
-              </button>
             </div>
           </div>
 
@@ -154,7 +183,7 @@ function SortablePlayerCard({
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`Drag seat ${index + 1}`}
-            className="touch-none self-stretch rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-200"
+            className="touch-none self-stretch rounded-xl border border-slate-700 bg-slate-950 px-3 text-base text-slate-200"
             {...attributes}
             {...listeners}
           >
@@ -181,6 +210,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
     }),
   )
   const blueRangeError = validateBlueRange(draft)
+  const playerCount = draft.players.length
   const referencedPlayerIds = useMemo(() => {
     const ids = new Set<string>()
 
@@ -234,7 +264,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
 
     const parsed = parseCountInput(value)
 
-    if (parsed === null) {
+    if (parsed === null || parsed > playerCount) {
       return
     }
 
@@ -260,10 +290,20 @@ export function SetupTab({ game, txs }: SetupTabProps) {
       return
     }
 
-    setBlueCountInputs({
+    const normalized = clampBlueCount(parsed, playerCount)
+
+    const nextBlueCountInputs = {
       ...blueCountInputs,
-      [key]: String(parsed),
-    })
+      [key]: String(normalized),
+    }
+
+    persist(
+      {
+        ...draft,
+        [field]: normalized,
+      },
+      nextBlueCountInputs,
+    )
   }
 
   function handlePlayerDragEnd(event: DragEndEvent): void {
@@ -283,9 +323,15 @@ export function SetupTab({ game, txs }: SetupTabProps) {
     }))
   }
 
-  const visualSlots = Array.from({ length: draft.players.length }, (_, index) => index)
-  const visualMin = Math.max(0, Math.min(draft.blueCountMin, draft.players.length))
-  const visualMax = Math.max(0, Math.min(draft.blueCountMax, draft.players.length))
+  const visualCounts = Array.from({ length: playerCount + 1 }, (_, count) => count)
+  const visualMin = clampBlueCount(draft.blueCountMin, playerCount)
+  const visualMax = clampBlueCount(draft.blueCountMax, playerCount)
+  const hasValidVisualRange = blueRangeError === null
+  const allowedBlueTotalsSummary = formatAllowedBlueTotals(
+    visualMin,
+    visualMax,
+    hasValidVisualRange,
+  )
 
   return (
     <div className="space-y-4">
@@ -295,7 +341,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
             <span>Game name</span>
             <input
               aria-label="Game name"
-              className="rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+              className="rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
               value={draft.name}
               onChange={(event) =>
                 updateDraft((currentDraft) => ({
@@ -307,55 +353,60 @@ export function SetupTab({ game, txs }: SetupTabProps) {
           </label>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <div className="mb-3 text-sm font-semibold text-slate-100">Blue count range</div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm text-slate-300">
-                <span>Minimum</span>
-                <input
-                  aria-label="Blue count minimum"
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={blueCountInputs.min}
-                  onBlur={() => normalizeBlueCount('blueCountMin')}
-                  onChange={(event) =>
-                    updateBlueCount('blueCountMin', event.target.value)
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-slate-300">
-                <span>Maximum</span>
-                <input
-                  aria-label="Blue count maximum"
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={blueCountInputs.max}
-                  onBlur={() => normalizeBlueCount('blueCountMax')}
-                  onChange={(event) =>
-                    updateBlueCount('blueCountMax', event.target.value)
-                  }
-                />
-              </label>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-slate-100">Blue count range</div>
+                <div className="mt-1 text-xs text-slate-400">{allowedBlueTotalsSummary}</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <span>Min</span>
+                  <input
+                    aria-label="Blue count minimum"
+                    className="w-16 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-center text-base text-slate-100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={blueCountInputs.min}
+                    onBlur={() => normalizeBlueCount('blueCountMin')}
+                    onChange={(event) =>
+                      updateBlueCount('blueCountMin', event.target.value)
+                    }
+                  />
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <span>Max</span>
+                  <input
+                    aria-label="Blue count maximum"
+                    className="w-16 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-center text-base text-slate-100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={blueCountInputs.max}
+                    onBlur={() => normalizeBlueCount('blueCountMax')}
+                    onChange={(event) =>
+                      updateBlueCount('blueCountMax', event.target.value)
+                    }
+                  />
+                </label>
+              </div>
             </div>
-            <div
-              className="mt-4 grid gap-2"
-              style={{
-                gridTemplateColumns: `repeat(${Math.max(draft.players.length, 1)}, minmax(0, 1fr))`,
-              }}
-            >
-              {visualSlots.map((slot) => {
-                const isSelected = slot >= visualMin && slot < visualMax
+            <div className="mt-4 flex flex-wrap gap-2" aria-label="Allowed blue totals">
+              {visualCounts.map((count) => {
+                const isAllowed =
+                  hasValidVisualRange && count >= visualMin && count <= visualMax
 
                 return (
-                  <div
-                    key={slot}
-                    className={`h-3 rounded-full ${
-                      isSelected ? 'bg-blue-500' : 'bg-slate-800'
+                  <span
+                    key={count}
+                    className={`min-w-9 rounded-full px-3 py-1.5 text-center text-sm font-medium ${
+                      isAllowed
+                        ? 'bg-blue-500 text-white'
+                        : 'border border-slate-700 bg-slate-950 text-slate-400'
                     }`}
-                  />
+                  >
+                    {count}
+                  </span>
                 )
               })}
             </div>

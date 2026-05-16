@@ -24,4 +24,17 @@ describe('SetupTab', () => {
 
     expect(minimumInput).toHaveValue('12')
   })
+
+  it('shows an inclusive blue-count summary', () => {
+    const game = createGameFixture({
+      players: createPlayers(['Alice', 'Bob', 'Carol', 'Dan', 'Eve']),
+      blueCountMin: 1,
+      blueCountMax: 3,
+    })
+
+    render(<SetupTab game={game} txs={[]} />)
+
+    expect(screen.getAllByText('Allowed blue totals (inclusive): 1-3')).not.toHaveLength(0)
+    expect(screen.getAllByLabelText('Allowed blue totals')).not.toHaveLength(0)
+  })
 })

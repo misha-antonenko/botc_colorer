@@ -254,7 +254,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 <span>Signed weight</span>
                 <input
                   aria-label="Signed weight"
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
                   type="text"
                   inputMode="text"
                   autoCapitalize="off"
@@ -306,7 +306,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                   <span>Conditioning color</span>
                   <select
                     aria-label="Conditioning color"
-                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
                     value={conditionalDraft.color}
                     onChange={(event) =>
                       setConditionalDraft((currentDraft) => ({
@@ -356,7 +356,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                     <span>Equation signed weight</span>
                     <input
                       aria-label="Equation signed weight"
-                      className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                      className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
                       type="text"
                       inputMode="text"
                       autoCapitalize="off"
@@ -383,7 +383,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
             <span>Note</span>
             <textarea
               aria-label="Note"
-              className="min-h-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+              className="min-h-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
               value={note}
               onChange={(event) => setNote(event.target.value)}
             />

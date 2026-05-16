@@ -41,7 +41,7 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
             <span>Display cap</span>
             <select
               aria-label="Display cap"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
               value={solutionCap}
               onChange={(event) =>
                 setSolutionCap(game.id, Number(event.target.value) as (typeof SOLUTION_CAPS)[number])
