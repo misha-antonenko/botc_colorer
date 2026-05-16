@@ -1,0 +1,45 @@
+import { expect, test } from '@playwright/test'
+
+test('mobile workflow updates solutions when a transaction is disabled', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'New game' }).click()
+
+  await expect(page.getByRole('heading', { name: 'New game' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Add player' }).click()
+  await page.getByLabel('Player 6 name').fill('Frank')
+  await page.getByRole('button', { name: 'Seat 3 fixed color: Unknown' }).click()
+
+  await page.getByRole('button', { name: 'Transactions' }).click()
+  await page.getByRole('link', { name: 'Add transaction' }).click()
+  await page.getByLabel('Signed weight').fill('2')
+  await page.getByRole('button', { name: 'Save transaction' }).click()
+
+  await page.getByRole('link', { name: 'Add transaction' }).click()
+  await page.getByRole('button', { name: 'Conditional' }).click()
+  await page.getByLabel('Conditioning player').selectOption({
+    label: 'Player 3 (#3)',
+  })
+  await page.getByLabel('Player i').selectOption({
+    label: 'Player 1 (#1)',
+  })
+  await page.getByLabel('Player j').selectOption({
+    label: 'Player 2 (#2)',
+  })
+  await page.getByLabel('Equation 1 signed weight').fill('-2')
+  await page.getByRole('button', { name: 'Save transaction' }).click()
+
+  await page.getByRole('button', { name: 'Solutions' }).click()
+  const firstSolutionBefore = await page.getByText(/Fitness /).first().textContent()
+
+  await page.getByRole('button', { name: 'Transactions' }).click()
+  const dyadicRow = page.locator('article').filter({
+    hasText: 'Player 1 → Player 2, w = +2',
+  })
+  await dyadicRow.getByLabel('Enabled').uncheck()
+
+  await page.getByRole('button', { name: 'Solutions' }).click()
+  const firstSolutionAfter = await page.getByText(/Fitness /).first().textContent()
+
+  expect(firstSolutionAfter).not.toEqual(firstSolutionBefore)
+})
