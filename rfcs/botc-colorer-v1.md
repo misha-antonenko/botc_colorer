@@ -41,7 +41,7 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
 
 ## Notes
 
-- The initial implementation will use simple but complete controls instead of gesture-heavy interactions where equivalent functionality can be delivered more reliably. For example, transaction deletion will be implemented with an explicit delete action plus timed undo rather than a touch-swipe recognizer.
+- The initial implementation prioritized simple complete controls, but subsequent device testing justified targeted gesture support where it materially improved mobile usability.
 - Placeholder generated icons are acceptable for the initial PWA shell as long as the manifest and installability requirements are met.
 - Implemented surfaces:
   - Vite + React + TypeScript app with React Router, Tailwind, Dexie, Zustand, and `vite-plugin-pwa`.
@@ -63,3 +63,8 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - The state tab removes the redundant symmetric pair section, and the matrix scroll area no longer overlays the workspace header.
   - Transactions are simplified: conditional transactions create exactly one equation, the enabled control is inline, and delete is exposed via swipe-to-reveal instead of a large always-visible button.
   - Solutions now show `tied with previous` only when the visible previous row actually shares the same fitness tier.
+- Second device-polish pass:
+  - Transaction cards no longer show timestamps, use a checkmark-only enabled control, and keep the hidden swipe-delete action fully invisible while closed or disabled.
+  - Setup player cards now use the same swipe-delete affordance, place the fixed-color control inline with the player name, and stretch the drag handle along the right edge.
+  - Signed weight fields use permissive text inputs so `+` and `-` remain typeable on iOS.
+  - The `f` matrix uses tighter cell sizing, and solution color cells now include tiny player initials.

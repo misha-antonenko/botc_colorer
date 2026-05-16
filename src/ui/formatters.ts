@@ -52,6 +52,26 @@ export function getPlayerSeatLabel(game: Game, playerId: PlayerId): string {
   return `${getPlayerName(game, playerId)} (#${playerRecord.index + 1})`
 }
 
+export function getNameInitials(name: string): string {
+  const trimmedName = name.trim()
+
+  if (trimmedName === '') {
+    return '?'
+  }
+
+  const parts = trimmedName.split(/\s+/).filter(Boolean)
+
+  if (parts.length === 1) {
+    return parts[0][0]?.toUpperCase() ?? '?'
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .toUpperCase()
+}
+
 export function formatEquationSummary(
   game: Game,
   i: PlayerId,

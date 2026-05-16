@@ -255,9 +255,11 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 <input
                   aria-label="Signed weight"
                   className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-                  type="number"
-                  step="0.1"
-                  inputMode="decimal"
+                  type="text"
+                  inputMode="text"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={dyadicDraft.weight}
                   onChange={(event) =>
                     setDyadicDraft((currentDraft) => ({
@@ -355,9 +357,11 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                     <input
                       aria-label="Equation signed weight"
                       className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-                      type="number"
-                      step="0.1"
-                      inputMode="decimal"
+                      type="text"
+                      inputMode="text"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
                       value={conditionalDraft.equation.weight}
                       onChange={(event) =>
                         setConditionalDraft((currentDraft) => ({

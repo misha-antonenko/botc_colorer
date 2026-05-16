@@ -27,18 +27,18 @@ export function FMatrix({ game, txs }: FMatrixProps) {
       <table className="f-matrix min-w-full text-left text-sm">
         <thead>
           <tr>
-            <th className="corner border-b border-r border-slate-800 bg-slate-950 px-3 py-3 text-xs uppercase tracking-wide text-slate-400">
+            <th className="corner border-b border-r border-slate-800 bg-slate-950 px-2 py-2 text-[10px] uppercase tracking-wide text-slate-400">
               Active \ Passive
             </th>
             {game.players.map((player, index) => (
               <th
                 key={player.id}
-                className="border-b border-slate-800 bg-slate-950 px-3 py-3 align-bottom"
+                className="border-b border-slate-800 bg-slate-950 px-2 py-2 align-bottom"
               >
-                <div className="text-sm font-semibold text-slate-100">
+                <div className="text-xs font-semibold text-slate-100">
                   {getPlayerName(game, player.id)}
                 </div>
-                <div className="text-xs text-slate-400">Seat {index + 1}</div>
+                <div className="text-[10px] text-slate-400">Seat {index + 1}</div>
               </th>
             ))}
           </tr>
@@ -46,11 +46,11 @@ export function FMatrix({ game, txs }: FMatrixProps) {
         <tbody>
           {game.players.map((rowPlayer, rowIndex) => (
             <tr key={rowPlayer.id}>
-              <th className="border-r border-slate-800 bg-slate-950 px-3 py-3">
-                <div className="text-sm font-semibold text-slate-100">
+              <th className="border-r border-slate-800 bg-slate-950 px-2 py-2">
+                <div className="text-xs font-semibold text-slate-100">
                   {getPlayerName(game, rowPlayer.id)}
                 </div>
-                <div className="text-xs text-slate-400">Seat {rowIndex + 1}</div>
+                <div className="text-[10px] text-slate-400">Seat {rowIndex + 1}</div>
               </th>
               {game.players.map((columnPlayer, columnIndex) => {
                 const isDiagonal = rowIndex === columnIndex
@@ -60,7 +60,7 @@ export function FMatrix({ game, txs }: FMatrixProps) {
                 return (
                   <td
                     key={columnPlayer.id}
-                    className="border-b border-r border-slate-800 px-3 py-3 align-top font-mono text-xs text-slate-100"
+                    className="border-b border-r border-slate-800 px-2 py-2 align-top font-mono text-[11px] leading-tight text-slate-100"
                     style={{
                       backgroundColor: isDiagonal
                         ? 'rgba(15, 23, 42, 0.95)'

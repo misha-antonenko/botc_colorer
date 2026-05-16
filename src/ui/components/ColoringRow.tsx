@@ -4,7 +4,7 @@ import {
   formatColoringBits,
 } from '../../solver/solve'
 import type { Game, SolverResult, Transaction } from '../../solver/types'
-import { formatEquationSummary, formatSignedNumber } from '../formatters'
+import { formatEquationSummary, formatSignedNumber, getNameInitials } from '../formatters'
 
 interface ColoringRowProps {
   game: Game
@@ -45,13 +45,16 @@ export function ColoringRow({
             {colors.map((color, index) => (
               <span
                 key={index}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-bold ${
+                className={`flex h-11 w-11 flex-col items-center justify-center rounded-lg border ${
                   color === 'blue'
                     ? 'border-blue-300/40 bg-blue-500/80 text-white'
                     : 'border-red-300/40 bg-red-500/80 text-white'
                 }`}
               >
-                {index + 1}
+                <span className="text-xs font-bold">{index + 1}</span>
+                <span className="text-[9px] leading-none opacity-90">
+                  {getNameInitials(game.players[index]?.name ?? '')}
+                </span>
               </span>
             ))}
           </div>

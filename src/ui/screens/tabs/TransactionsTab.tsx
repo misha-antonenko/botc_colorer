@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteTransaction, saveTransaction, toggleTransaction } from '../../../db/queries'
 import type { Game, Transaction } from '../../../solver/types'
 import { summarizeTransaction } from '../../formatters'
+import { SwipeActionRow } from '../../components/SwipeActionRow'
 
 interface TransactionsTabProps {
   game: Game
@@ -11,125 +12,6 @@ interface TransactionsTabProps {
 
 interface UndoState {
   tx: Transaction
-}
-
-interface SwipeActionRowProps {
-  children: ReactNode
-  deleteLabel: string
-  onDelete: () => void
-}
-
-const SWIPE_ACTION_WIDTH = 88
-
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    target.closest('button, input, label, a, select, textarea') !== null
-  )
-}
-
-function SwipeActionRow({ children, deleteLabel, onDelete }: SwipeActionRowProps) {
-  const [offset, setOffset] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const pointerIdRef = useRef<number | null>(null)
-  const startXRef = useRef(0)
-  const startOffsetRef = useRef(0)
-  const offsetRef = useRef(0)
-
-  function closeRow(): void {
-    offsetRef.current = 0
-    setOffset(0)
-    setIsDragging(false)
-  }
-
-  function openRow(): void {
-    offsetRef.current = -SWIPE_ACTION_WIDTH
-    setOffset(-SWIPE_ACTION_WIDTH)
-    setIsDragging(false)
-  }
-
-  function releasePointer(): void {
-    pointerIdRef.current = null
-    setIsDragging(false)
-  }
-
-  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>): void {
-    if ((event.pointerType === 'mouse' && event.button !== 0) || isInteractiveTarget(event.target)) {
-      return
-    }
-
-    pointerIdRef.current = event.pointerId
-    startXRef.current = event.clientX
-    startOffsetRef.current = offsetRef.current
-    event.currentTarget.setPointerCapture?.(event.pointerId)
-  }
-
-  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>): void {
-    if (pointerIdRef.current !== event.pointerId) {
-      return
-    }
-
-    const deltaX = event.clientX - startXRef.current
-
-    if (Math.abs(deltaX) > 4) {
-      setIsDragging(true)
-    }
-
-    const nextOffset = Math.max(
-      -SWIPE_ACTION_WIDTH,
-      Math.min(0, startOffsetRef.current + deltaX),
-    )
-
-    offsetRef.current = nextOffset
-    setOffset(nextOffset)
-  }
-
-  function handlePointerEnd(event: React.PointerEvent<HTMLDivElement>): void {
-    if (pointerIdRef.current !== event.pointerId) {
-      return
-    }
-
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
-    releasePointer()
-
-    if (offsetRef.current <= -SWIPE_ACTION_WIDTH / 2) {
-      openRow()
-      return
-    }
-
-    closeRow()
-  }
-
-  return (
-    <div className="relative overflow-hidden rounded-3xl">
-      <div className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500/15">
-        <button
-          type="button"
-          aria-label={deleteLabel}
-          className="rounded-full border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100 disabled:cursor-not-allowed disabled:opacity-40"
-          disabled={offset !== -SWIPE_ACTION_WIDTH}
-          onClick={() => {
-            closeRow()
-            onDelete()
-          }}
-        >
-          Delete
-        </button>
-      </div>
-      <div
-        className={`relative touch-pan-y ${isDragging ? '' : 'transition-transform duration-200 ease-out'}`}
-        style={{
-          transform: `translateX(${offset}px)`,
-        }}
-        onPointerCancel={closeRow}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-      >
-        {children}
-      </div>
-    </div>
-  )
 }
 
 export function TransactionsTab({ game, txs }: TransactionsTabProps) {
@@ -202,25 +84,24 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
               onDelete={() => void handleDelete(transaction.id)}
             >
               <article
-                className={`rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg shadow-slate-950/30 ${
-                  isEnabled ? '' : 'opacity-60'
-                }`}
+                className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg shadow-slate-950/30"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-2">
-                    <div className={`text-sm text-slate-200 ${isEnabled ? '' : 'line-through'}`}>
+                  <div className="min-w-0">
+                    <div
+                      className={`text-sm text-slate-200 ${
+                        isEnabled ? '' : 'line-through text-slate-500'
+                      }`}
+                    >
                       {summarizeTransaction(game, transaction)}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      Added {new Date(transaction.createdAt).toLocaleString()}
                     </div>
                   </div>
 
-                  <label className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
+                  <label className="inline-flex shrink-0 items-center rounded-md border border-slate-700 bg-slate-900/80 p-2 text-xs text-slate-300">
                     <input
                       aria-label="Enabled"
                       type="checkbox"
-                      className="h-4 w-4 accent-blue-500"
+                      className="h-5 w-5 accent-blue-500"
                       checked={isEnabled}
                       onChange={(event) => {
                         const enabled = event.target.checked
@@ -250,7 +131,6 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                           })
                       }}
                     />
-                    <span>Enabled</span>
                   </label>
                 </div>
               </article>

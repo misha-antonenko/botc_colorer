@@ -17,6 +17,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 import { saveGame } from '../../../db/queries'
 import type { Color, Game, Player, Transaction } from '../../../solver/types'
+import { SwipeActionRow } from '../../components/SwipeActionRow'
 
 interface SetupTabProps {
   game: Game
@@ -107,67 +108,61 @@ function SortablePlayerCard({
     player.fixedColor === null ? 'Unknown' : player.fixedColor === 'blue' ? 'Blue' : 'Red'
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 lg:grid-cols-[auto_1fr_auto_auto] ${
-        isDragging ? 'shadow-2xl shadow-blue-500/20 ring-1 ring-blue-400/40' : ''
-      }`}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
+    <SwipeActionRow
+      actionDisabled={cannotRemove}
+      deleteLabel={`Delete seat ${index + 1}`}
+      onDelete={onRemove}
     >
-      <div className="flex items-start justify-center">
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          aria-label={`Drag seat ${index + 1}`}
-          className="touch-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-200"
-          {...attributes}
-          {...listeners}
-        >
-          ≡
-        </button>
-      </div>
-
-      <label className="flex flex-col gap-2 text-sm text-slate-300">
-        <span>{`Seat ${index + 1} name`}</span>
-        <input
-          aria-label={`Player ${index + 1} name`}
-          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-          value={player.name}
-          onChange={(event) => onNameChange(event.target.value)}
-        />
-      </label>
-
-      <button
-        type="button"
-        aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
-        className={`rounded-xl px-4 py-2 text-sm font-medium ${
-          player.fixedColor === 'blue'
-            ? 'bg-blue-500 text-white'
-            : player.fixedColor === 'red'
-              ? 'bg-red-500 text-white'
-              : 'border border-slate-700 bg-slate-950 text-slate-200'
+      <div
+        ref={setNodeRef}
+        className={`rounded-2xl border border-slate-800 bg-slate-900/70 p-3 ${
+          isDragging ? 'shadow-2xl shadow-blue-500/20 ring-1 ring-blue-400/40' : ''
         }`}
-        onClick={onToggleColor}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+        }}
       >
-        {fixedColorLabel}
-      </button>
+        <div className="grid grid-cols-[1fr_auto] items-stretch gap-3">
+          <div className="space-y-2">
+            <div className="text-xs text-slate-400">Seat {index + 1}</div>
+            <div className="flex items-center gap-2">
+              <input
+                aria-label={`Player ${index + 1} name`}
+                className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                value={player.name}
+                onChange={(event) => onNameChange(event.target.value)}
+              />
+              <button
+                type="button"
+                aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
+                className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium ${
+                  player.fixedColor === 'blue'
+                    ? 'bg-blue-500 text-white'
+                    : player.fixedColor === 'red'
+                      ? 'bg-red-500 text-white'
+                      : 'border border-slate-700 bg-slate-950 text-slate-200'
+                }`}
+                onClick={onToggleColor}
+              >
+                {fixedColorLabel}
+              </button>
+            </div>
+          </div>
 
-      <button
-        type="button"
-        aria-label={`Remove seat ${index + 1}`}
-        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={cannotRemove}
-        title={
-          cannotRemove ? 'Remove dependent transactions before deleting this player.' : undefined
-        }
-        onClick={onRemove}
-      >
-        Remove
-      </button>
-    </div>
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            aria-label={`Drag seat ${index + 1}`}
+            className="touch-none self-stretch rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-200"
+            {...attributes}
+            {...listeners}
+          >
+            ≡
+          </button>
+        </div>
+      </div>
+    </SwipeActionRow>
   )
 }
 
