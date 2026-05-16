@@ -26,9 +26,9 @@ export function StateTab({ game, txs }: StateTabProps) {
 
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg shadow-slate-950/30">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-100">Conditional list</h2>
+          <h2 className="text-lg font-semibold text-slate-100">Conditional transactions</h2>
           <p className="text-sm text-slate-400">
-            Enabled conditional observations that feed the bracketed ranges in the matrix.
+            Enabled conditional transactions that feed the bracketed ranges in the matrix.
           </p>
         </div>
 
