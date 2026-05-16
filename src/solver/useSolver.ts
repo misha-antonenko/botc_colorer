@@ -22,10 +22,13 @@ const INITIAL_STATE: SolverState = {
   error: null,
 }
 
-export function useSolver(game: Game | undefined, txs: Transaction[] | undefined): SolverState {
+export function useSolver(
+  game: Game | null | undefined,
+  txs: Transaction[] | undefined,
+): SolverState {
   const [snapshot, setSnapshot] = useState<SolverSnapshot | null>(null)
   const solveKey = useMemo(() => {
-    if (game === undefined || txs === undefined) {
+    if (game === undefined || game === null || txs === undefined) {
       return null
     }
 
@@ -38,7 +41,7 @@ export function useSolver(game: Game | undefined, txs: Transaction[] | undefined
   }, [game, txs])
 
   useEffect(() => {
-    if (game === undefined || txs === undefined || solveKey === null) {
+    if (game === undefined || game === null || txs === undefined || solveKey === null) {
       return undefined
     }
 

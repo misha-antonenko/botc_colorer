@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { Game, SolverResult, Transaction } from '../../../solver/types'
 import { DEFAULT_SOLUTION_CAP, useUiStore } from '../../../state/store'
 import { ColoringRow } from '../../components/ColoringRow'
@@ -18,15 +18,6 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
   const solutionCap = useUiStore((state) => state.solutionCaps[game.id] ?? DEFAULT_SOLUTION_CAP)
   const setSolutionCap = useUiStore((state) => state.setSolutionCap)
   const visibleResults = results.slice(0, solutionCap)
-  const tieCounts = useMemo(() => {
-    const counts = new Map<number, number>()
-
-    for (const result of results) {
-      counts.set(result.fitness, (counts.get(result.fitness) ?? 0) + 1)
-    }
-
-    return counts
-  }, [results])
 
   if (status === 'error') {
     return (
@@ -75,13 +66,15 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleResults.map((result) => (
+          {visibleResults.map((result, index) => (
             <ColoringRow
               key={result.c}
               game={game}
               txs={txs}
               result={result}
-              tieCount={tieCounts.get(result.fitness) ?? 1}
+              isTiedWithPrevious={
+                index > 0 && visibleResults[index - 1].fitness === result.fitness
+              }
               expanded={expandedColoring === result.c}
               onToggle={() =>
                 setExpandedColoring((currentColoring) =>

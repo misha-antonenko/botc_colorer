@@ -1,10 +1,40 @@
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 import { saveGame } from '../../../db/queries'
-import type { Color, Game, Transaction } from '../../../solver/types'
+import type { Color, Game, Player, Transaction } from '../../../solver/types'
 
 interface SetupTabProps {
   game: Game
   txs: Transaction[]
+}
+
+interface BlueCountInputs {
+  min: string
+  max: string
+}
+
+interface SortablePlayerCardProps {
+  player: Player
+  index: number
+  cannotRemove: boolean
+  onNameChange: (name: string) => void
+  onToggleColor: () => void
+  onRemove: () => void
 }
 
 function cycleColor(currentColor: Color | null): Color | null {
@@ -27,9 +57,134 @@ function validateBlueRange(game: Game): string | null {
   return null
 }
 
+function parseCountInput(value: string): number | null {
+  if (value === '') {
+    return null
+  }
+
+  const parsed = Number(value)
+
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    return null
+  }
+
+  return parsed
+}
+
+function isDigitsOnly(value: string): boolean {
+  return /^\d*$/.test(value)
+}
+
+function reorderPlayers(players: Player[], activeId: string, overId: string): Player[] {
+  const activeIndex = players.findIndex((player) => player.id === activeId)
+  const overIndex = players.findIndex((player) => player.id === overId)
+
+  if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+    return players
+  }
+
+  return arrayMove(players, activeIndex, overIndex)
+}
+
+function SortablePlayerCard({
+  player,
+  index,
+  cannotRemove,
+  onNameChange,
+  onToggleColor,
+  onRemove,
+}: SortablePlayerCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: player.id })
+  const fixedColorLabel =
+    player.fixedColor === null ? 'Unknown' : player.fixedColor === 'blue' ? 'Blue' : 'Red'
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 lg:grid-cols-[auto_1fr_auto_auto] ${
+        isDragging ? 'shadow-2xl shadow-blue-500/20 ring-1 ring-blue-400/40' : ''
+      }`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+    >
+      <div className="flex items-start justify-center">
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          aria-label={`Drag seat ${index + 1}`}
+          className="touch-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-200"
+          {...attributes}
+          {...listeners}
+        >
+          ≡
+        </button>
+      </div>
+
+      <label className="flex flex-col gap-2 text-sm text-slate-300">
+        <span>{`Seat ${index + 1} name`}</span>
+        <input
+          aria-label={`Player ${index + 1} name`}
+          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+          value={player.name}
+          onChange={(event) => onNameChange(event.target.value)}
+        />
+      </label>
+
+      <button
+        type="button"
+        aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
+        className={`rounded-xl px-4 py-2 text-sm font-medium ${
+          player.fixedColor === 'blue'
+            ? 'bg-blue-500 text-white'
+            : player.fixedColor === 'red'
+              ? 'bg-red-500 text-white'
+              : 'border border-slate-700 bg-slate-950 text-slate-200'
+        }`}
+        onClick={onToggleColor}
+      >
+        {fixedColorLabel}
+      </button>
+
+      <button
+        type="button"
+        aria-label={`Remove seat ${index + 1}`}
+        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={cannotRemove}
+        title={
+          cannotRemove ? 'Remove dependent transactions before deleting this player.' : undefined
+        }
+        onClick={onRemove}
+      >
+        Remove
+      </button>
+    </div>
+  )
+}
+
 export function SetupTab({ game, txs }: SetupTabProps) {
   const [draft, setDraft] = useState(game)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [blueCountInputs, setBlueCountInputs] = useState<BlueCountInputs>({
+    min: String(game.blueCountMin),
+    max: String(game.blueCountMax),
+  })
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  )
   const blueRangeError = validateBlueRange(draft)
   const referencedPlayerIds = useMemo(() => {
     const ids = new Set<string>()
@@ -50,8 +205,10 @@ export function SetupTab({ game, txs }: SetupTabProps) {
 
     return ids
   }, [txs])
-  function persist(nextGame: Game): void {
+
+  function persist(nextGame: Game, nextBlueCountInputs = blueCountInputs): void {
     setDraft(nextGame)
+    setBlueCountInputs(nextBlueCountInputs)
 
     if (validateBlueRange(nextGame) !== null) {
       return
@@ -66,6 +223,69 @@ export function SetupTab({ game, txs }: SetupTabProps) {
 
   function updateDraft(updater: (currentDraft: Game) => Game): void {
     persist(updater(draft))
+  }
+
+  function updateBlueCount(field: 'blueCountMin' | 'blueCountMax', value: string): void {
+    if (!isDigitsOnly(value)) {
+      return
+    }
+
+    const nextBlueCountInputs =
+      field === 'blueCountMin'
+        ? { ...blueCountInputs, min: value }
+        : { ...blueCountInputs, max: value }
+
+    setBlueCountInputs(nextBlueCountInputs)
+
+    const parsed = parseCountInput(value)
+
+    if (parsed === null) {
+      return
+    }
+
+    persist(
+      {
+        ...draft,
+        [field]: parsed,
+      },
+      nextBlueCountInputs,
+    )
+  }
+
+  function normalizeBlueCount(field: 'blueCountMin' | 'blueCountMax'): void {
+    const key = field === 'blueCountMin' ? 'min' : 'max'
+    const currentValue = blueCountInputs[key]
+    const parsed = parseCountInput(currentValue)
+
+    if (parsed === null) {
+      setBlueCountInputs({
+        ...blueCountInputs,
+        [key]: String(draft[field]),
+      })
+      return
+    }
+
+    setBlueCountInputs({
+      ...blueCountInputs,
+      [key]: String(parsed),
+    })
+  }
+
+  function handlePlayerDragEnd(event: DragEndEvent): void {
+    const { active, over } = event
+
+    if (over === null || active.id === over.id) {
+      return
+    }
+
+    updateDraft((currentDraft) => ({
+      ...currentDraft,
+      players: reorderPlayers(
+        currentDraft.players,
+        String(active.id),
+        String(over.id),
+      ),
+    }))
   }
 
   const visualSlots = Array.from({ length: draft.players.length }, (_, index) => index)
@@ -99,15 +319,13 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                 <input
                   aria-label="Blue count minimum"
                   className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                  type="number"
-                  min={0}
-                  max={draft.players.length}
-                  value={draft.blueCountMin}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={blueCountInputs.min}
+                  onBlur={() => normalizeBlueCount('blueCountMin')}
                   onChange={(event) =>
-                    updateDraft((currentDraft) => ({
-                      ...currentDraft,
-                      blueCountMin: Number(event.target.value),
-                    }))
+                    updateBlueCount('blueCountMin', event.target.value)
                   }
                 />
               </label>
@@ -116,20 +334,23 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                 <input
                   aria-label="Blue count maximum"
                   className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                  type="number"
-                  min={0}
-                  max={draft.players.length}
-                  value={draft.blueCountMax}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={blueCountInputs.max}
+                  onBlur={() => normalizeBlueCount('blueCountMax')}
                   onChange={(event) =>
-                    updateDraft((currentDraft) => ({
-                      ...currentDraft,
-                      blueCountMax: Number(event.target.value),
-                    }))
+                    updateBlueCount('blueCountMax', event.target.value)
                   }
                 />
               </label>
             </div>
-            <div className="mt-4 grid grid-cols-5 gap-2">
+            <div
+              className="mt-4 grid gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${Math.max(draft.players.length, 1)}, minmax(0, 1fr))`,
+              }}
+            >
               {visualSlots.map((slot) => {
                 const isSelected = slot >= visualMin && slot < visualMax
 
@@ -155,7 +376,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Players</h2>
             <p className="text-sm text-slate-400">
-              Reorder seats, rename players, and cycle fixed colors.
+              Drag to reorder seats, rename players, and cycle fixed colors.
             </p>
           </div>
           <button
@@ -173,10 +394,6 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                     fixedColor: null,
                   },
                 ],
-                blueCountMax: Math.max(
-                  currentDraft.blueCountMax,
-                  Math.min(currentDraft.players.length + 1, currentDraft.blueCountMax),
-                ),
               }))
             }
           >
@@ -184,130 +401,62 @@ export function SetupTab({ game, txs }: SetupTabProps) {
           </button>
         </div>
 
-        <div className="space-y-3">
-          {draft.players.map((player, index) => {
-            const cannotRemove =
-              draft.players.length === 1 || referencedPlayerIds.has(player.id)
-            const fixedColorLabel =
-              player.fixedColor === null ? 'Unknown' : player.fixedColor === 'blue' ? 'Blue' : 'Red'
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={handlePlayerDragEnd}
+        >
+          <SortableContext
+            items={draft.players.map((player) => player.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {draft.players.map((player, index) => {
+                const cannotRemove =
+                  draft.players.length === 1 || referencedPlayerIds.has(player.id)
 
-            return (
-              <div
-                key={player.id}
-                className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 lg:grid-cols-[auto_1fr_auto_auto]"
-              >
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 disabled:opacity-40"
-                    disabled={index === 0}
-                    onClick={() =>
-                      updateDraft((currentDraft) => {
-                        const nextPlayers = [...currentDraft.players]
-                        ;[nextPlayers[index - 1], nextPlayers[index]] = [
-                          nextPlayers[index],
-                          nextPlayers[index - 1],
-                        ]
-                        return { ...currentDraft, players: nextPlayers }
-                      })
+                return (
+                  <SortablePlayerCard
+                    key={player.id}
+                    player={player}
+                    index={index}
+                    cannotRemove={cannotRemove}
+                    onNameChange={(name) =>
+                      updateDraft((currentDraft) => ({
+                        ...currentDraft,
+                        players: currentDraft.players.map((currentPlayer, currentIndex) =>
+                          currentIndex === index ? { ...currentPlayer, name } : currentPlayer,
+                        ),
+                      }))
                     }
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 disabled:opacity-40"
-                    disabled={index === draft.players.length - 1}
-                    onClick={() =>
-                      updateDraft((currentDraft) => {
-                        const nextPlayers = [...currentDraft.players]
-                        ;[nextPlayers[index + 1], nextPlayers[index]] = [
-                          nextPlayers[index],
-                          nextPlayers[index + 1],
-                        ]
-                        return { ...currentDraft, players: nextPlayers }
-                      })
-                    }
-                  >
-                    ↓
-                  </button>
-                </div>
-
-                <label className="flex flex-col gap-2 text-sm text-slate-300">
-                  <span>{`Seat ${index + 1} name`}</span>
-                  <input
-                    aria-label={`Player ${index + 1} name`}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                    value={player.name}
-                    onChange={(event) =>
+                    onToggleColor={() =>
                       updateDraft((currentDraft) => ({
                         ...currentDraft,
                         players: currentDraft.players.map((currentPlayer, currentIndex) =>
                           currentIndex === index
-                            ? { ...currentPlayer, name: event.target.value }
+                            ? {
+                                ...currentPlayer,
+                                fixedColor: cycleColor(currentPlayer.fixedColor),
+                              }
                             : currentPlayer,
                         ),
                       }))
                     }
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
-                  className={`rounded-xl px-4 py-2 text-sm font-medium ${
-                    player.fixedColor === 'blue'
-                      ? 'bg-blue-500 text-white'
-                      : player.fixedColor === 'red'
-                        ? 'bg-red-500 text-white'
-                        : 'border border-slate-700 bg-slate-950 text-slate-200'
-                  }`}
-                  onClick={() =>
-                    updateDraft((currentDraft) => ({
-                      ...currentDraft,
-                      players: currentDraft.players.map((currentPlayer, currentIndex) =>
-                        currentIndex === index
-                          ? {
-                              ...currentPlayer,
-                              fixedColor: cycleColor(currentPlayer.fixedColor),
-                            }
-                          : currentPlayer,
-                      ),
-                    }))
-                  }
-                >
-                  {fixedColorLabel}
-                </button>
-
-                <button
-                  type="button"
-                  aria-label={`Remove seat ${index + 1}`}
-                  className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={cannotRemove}
-                  title={
-                    cannotRemove && referencedPlayerIds.has(player.id)
-                      ? 'Remove dependent transactions before deleting this player.'
-                      : undefined
-                  }
-                  onClick={() =>
-                    updateDraft((currentDraft) => {
-                      const nextPlayers = currentDraft.players.filter((_, currentIndex) => currentIndex !== index)
-                      const nextPlayerCount = nextPlayers.length
-                      return {
+                    onRemove={() =>
+                      updateDraft((currentDraft) => ({
                         ...currentDraft,
-                        players: nextPlayers,
-                        blueCountMin: Math.min(currentDraft.blueCountMin, nextPlayerCount),
-                        blueCountMax: Math.min(currentDraft.blueCountMax, nextPlayerCount),
-                      }
-                    })
-                  }
-                >
-                  Remove
-                </button>
-              </div>
-            )
-          })}
-        </div>
+                        players: currentDraft.players.filter(
+                          (_, currentIndex) => currentIndex !== index,
+                        ),
+                      }))
+                    }
+                  />
+                )
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
       </section>
 
       {saveError === null ? null : (

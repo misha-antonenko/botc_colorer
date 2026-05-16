@@ -9,7 +9,7 @@ import {
   useGames,
 } from '../../db/queries'
 import {
-  buildPortablePayload,
+  createPortablePayload,
   importPortablePayload,
   shareOrDownloadPortablePayload,
 } from '../../db/portable'
@@ -67,13 +67,24 @@ export function GamesList() {
   }
 
   async function handleExportAll(): Promise<void> {
-    const payload = await buildPortablePayload()
-    await shareOrDownloadPortablePayload(payload, 'botc-colorer-export')
+    try {
+      const payload = createPortablePayload(games, transactions)
+      await shareOrDownloadPortablePayload(payload, 'botc-colorer-export')
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to export games.')
+    }
   }
 
   async function handleExportGame(gameId: string, name: string): Promise<void> {
-    const payload = await buildPortablePayload([gameId])
-    await shareOrDownloadPortablePayload(payload, name)
+    try {
+      const payload = createPortablePayload(
+        games.filter((game) => game.id === gameId),
+        transactions.filter((transaction) => transaction.gameId === gameId),
+      )
+      await shareOrDownloadPortablePayload(payload, name)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to export the game.')
+    }
   }
 
   async function handleRestoreSnapshot(gameId: string): Promise<void> {

@@ -47,18 +47,18 @@ button {
 .f-matrix thead th {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 10;
 }
 
 .f-matrix tbody th {
   position: sticky;
   left: 0;
-  z-index: 10;
+  z-index: 5;
 }
 
 .f-matrix .corner {
   left: 0;
-  z-index: 30;
+  z-index: 15;
 }
 
 .f-matrix th,

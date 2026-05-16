@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { buildPortablePayload, importPortablePayload } from './portable'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  buildPortablePayload,
+  importPortablePayload,
+  shareOrDownloadPortablePayload,
+} from './portable'
 import { db, encodeGameRow, encodeTransactionRow } from './schema'
 import {
   createConditionalTxFixture,
@@ -43,5 +47,51 @@ describe('portable payloads', () => {
     const roundTrip = await buildPortablePayload(undefined, 123)
 
     expect(roundTrip).toEqual(exported)
+  })
+
+  it('falls back to a download link when file sharing is unavailable', async () => {
+    vi.useFakeTimers()
+
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:fixture-export')
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined)
+
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: undefined,
+    })
+    Object.defineProperty(navigator, 'canShare', {
+      configurable: true,
+      value: undefined,
+    })
+
+    await shareOrDownloadPortablePayload(
+      {
+        version: 1,
+        exportedAt: 123,
+        games: [],
+        transactions: [],
+      },
+      'Fixture export',
+    )
+
+    expect(createObjectUrl).toHaveBeenCalledOnce()
+    expect(clickSpy).toHaveBeenCalledOnce()
+    expect(
+      document.body.querySelector('a[download="fixture-export.json"]'),
+    ).not.toBeNull()
+
+    vi.advanceTimersByTime(1000)
+
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:fixture-export')
+    expect(document.body.querySelector('a[download="fixture-export.json"]')).toBeNull()
+
+    vi.useRealTimers()
   })
 })

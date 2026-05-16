@@ -10,7 +10,7 @@ interface ColoringRowProps {
   game: Game
   txs: Transaction[]
   result: SolverResult
-  tieCount: number
+  isTiedWithPrevious: boolean
   expanded: boolean
   onToggle: () => void
 }
@@ -19,7 +19,7 @@ export function ColoringRow({
   game,
   txs,
   result,
-  tieCount,
+  isTiedWithPrevious,
   expanded,
   onToggle,
 }: ColoringRowProps) {
@@ -59,8 +59,8 @@ export function ColoringRow({
             <div className="text-lg font-semibold text-slate-100">
               Fitness {formatSignedNumber(result.fitness)}
             </div>
-            {tieCount > 1 ? (
-              <div className="text-xs text-slate-400">tied with {tieCount - 1}</div>
+            {isTiedWithPrevious ? (
+              <div className="text-xs text-slate-400">tied with previous</div>
             ) : null}
           </div>
         </div>

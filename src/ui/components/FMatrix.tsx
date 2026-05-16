@@ -23,7 +23,7 @@ export function FMatrix({ game, txs }: FMatrixProps) {
   const stateMatrix = useMemo(() => buildStateMatrixData(game, txs), [game, txs])
 
   return (
-    <div className="overflow-auto rounded-2xl border border-slate-800 bg-slate-950/80 shadow-lg shadow-slate-950/40">
+    <div className="max-h-[70svh] overflow-auto rounded-2xl border border-slate-800 bg-slate-950/80 shadow-lg shadow-slate-950/40">
       <table className="f-matrix min-w-full text-left text-sm">
         <thead>
           <tr>

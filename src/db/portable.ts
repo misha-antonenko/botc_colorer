@@ -134,6 +134,29 @@ export function parsePortablePayload(raw: unknown): PortablePayload {
   return payload
 }
 
+export function createPortablePayload(
+  games: Game[],
+  transactions: Transaction[],
+  exportedAt = Date.now(),
+): PortablePayload {
+  const normalizedGames = [...games].sort(
+    (left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id),
+  )
+  const selectedGameIds = new Set(normalizedGames.map((game) => game.id))
+  const normalizedTransactions = [...transactions]
+    .filter((transaction) => selectedGameIds.has(transaction.gameId))
+    .sort(
+      (left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id),
+    )
+
+  return {
+    version: 1,
+    exportedAt,
+    games: normalizedGames,
+    transactions: normalizedTransactions,
+  }
+}
+
 export async function buildPortablePayload(
   gameIds?: string[],
   exportedAt = Date.now(),
@@ -158,12 +181,7 @@ export async function buildPortablePayload(
       (left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id),
     )
 
-  return {
-    version: 1,
-    exportedAt,
-    games,
-    transactions,
-  }
+  return createPortablePayload(games, transactions, exportedAt)
 }
 
 export async function importPortablePayload(raw: unknown): Promise<PortableImportResult> {
@@ -233,15 +251,25 @@ export async function shareOrDownloadPortablePayload(
     canShare?: (data: ShareData) => boolean
   }
 
-  if (
-    typeof navigatorWithShare.share === 'function' &&
-    navigatorWithShare.canShare?.({ files: [file] })
-  ) {
-    await navigatorWithShare.share({
-      title: name,
-      files: [file],
-    })
-    return
+  if (typeof navigatorWithShare.share === 'function') {
+    const canShareFiles =
+      typeof navigatorWithShare.canShare === 'function'
+        ? navigatorWithShare.canShare({ files: [file] })
+        : false
+
+    if (canShareFiles) {
+      try {
+        await navigatorWithShare.share({
+          title: name,
+          files: [file],
+        })
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+      }
+    }
   }
 
   const blob = new Blob([json], {
@@ -251,6 +279,12 @@ export async function shareOrDownloadPortablePayload(
   const link = document.createElement('a')
   link.href = downloadUrl
   link.download = fileName
+  link.rel = 'noopener'
+  link.style.display = 'none'
+  document.body.append(link)
   link.click()
-  URL.revokeObjectURL(downloadUrl)
+  window.setTimeout(() => {
+    link.remove()
+    URL.revokeObjectURL(downloadUrl)
+  }, 1000)
 }

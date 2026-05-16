@@ -26,7 +26,7 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   await page.getByLabel('Player j').selectOption({
     label: 'Player 2 (#2)',
   })
-  await page.getByLabel('Equation 1 signed weight').fill('-2')
+  await page.getByLabel('Equation signed weight').fill('-2')
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
   await page.getByRole('button', { name: 'Solutions' }).click()
@@ -42,4 +42,16 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   const firstSolutionAfter = await page.getByText(/Fitness /).first().textContent()
 
   expect(firstSolutionAfter).not.toEqual(firstSolutionBefore)
+})
+
+test('game export triggers a download', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'New game' }).click()
+  await page.getByRole('link', { name: '← Back to games' }).click()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export', exact: true }).click()
+  const download = await downloadPromise
+
+  expect(download.suggestedFilename()).toMatch(/\.json$/)
 })

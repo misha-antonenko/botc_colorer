@@ -56,3 +56,10 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
 - Deployment fix:
   - GitHub Pages had been serving the repository root, which exposed raw source files such as `/src/main.tsx` and produced a blank page in browsers.
   - The fix switches deployment to an Actions-built Pages artifact, sets the repository base path for Vite and PWA metadata, and emits `404.html` for deep-link fallback on GitHub Pages.
+- Follow-up UX fixes after device testing:
+  - Export now uses the already-loaded in-memory game state on the games list and a safer blob-download fallback so macOS/iOS browsers can actually download JSON exports.
+  - Missing game routes now render an explicit not-found state instead of an infinite loading screen.
+  - Blue-count inputs now use numeric input mode with permissive text entry so temporary out-of-range edits are possible, and player order now uses drag-and-drop.
+  - The state tab removes the redundant symmetric pair section, and the matrix scroll area no longer overlays the workspace header.
+  - Transactions are simplified: conditional transactions create exactly one equation, the enabled control is inline, and delete is exposed via swipe-to-reveal instead of a large always-visible button.
+  - Solutions now show `tied with previous` only when the visible previous row actually shares the same fitness tier.

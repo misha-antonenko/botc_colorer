@@ -54,15 +54,15 @@ export function useGames(): Game[] | undefined {
   )
 }
 
-export function useGame(gameId: GameId | undefined): Game | undefined {
+export function useGame(gameId: GameId | undefined): Game | null | undefined {
   return useLiveQuery(
     async () => {
       if (gameId === undefined) {
-        return undefined
+        return null
       }
 
       const row = await db.games.get(gameId)
-      return row === undefined ? undefined : decodeGameRow(row)
+      return row === undefined ? null : decodeGameRow(row)
     },
     [gameId],
     undefined,

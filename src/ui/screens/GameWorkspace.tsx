@@ -29,7 +29,26 @@ export function GameWorkspace() {
     gameId === undefined ? DEFAULT_SOLUTION_CAP : (state.solutionCaps[gameId] ?? DEFAULT_SOLUTION_CAP),
   )
 
-  if (gameId === undefined || game === undefined || txs === undefined) {
+  if (gameId === undefined || game === null) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center px-4">
+        <div className="w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-6 py-8 text-center text-slate-300 shadow-2xl shadow-slate-950/30">
+          <h1 className="text-2xl font-semibold text-white">Game not found</h1>
+          <p className="mt-3 text-sm text-slate-400">
+            This game does not exist on this device anymore.
+          </p>
+          <Link
+            className="mt-5 inline-flex rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white"
+            to="/"
+          >
+            Back to games
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (game === undefined || txs === undefined) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center px-4">
         <div className="rounded-3xl border border-slate-800 bg-slate-950/80 px-6 py-8 text-center text-slate-300">

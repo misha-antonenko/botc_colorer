@@ -27,7 +27,7 @@ interface EquationDraft {
 interface ConditionalDraft {
   playerId: string
   color: Color
-  equations: EquationDraft[]
+  equation: EquationDraft
 }
 
 function getDefaultDyadicDraft(game: Game | undefined): DyadicDraft {
@@ -46,13 +46,11 @@ function getDefaultConditionalDraft(game: Game | undefined): ConditionalDraft {
   return {
     playerId: players[0]?.id ?? '',
     color: 'blue',
-    equations: [
-      {
-        i: players[0]?.id ?? '',
-        j: players[1]?.id ?? players[0]?.id ?? '',
-        weight: '1',
-      },
-    ],
+    equation: {
+      i: players[0]?.id ?? '',
+      j: players[1]?.id ?? players[0]?.id ?? '',
+      weight: '1',
+    },
   }
 }
 
@@ -69,7 +67,8 @@ function parseWeight(value: string): number | null {
 export function AddTransactionSheet() {
   const { gameId } = useParams()
   const game = useGame(gameId)
-  if (game === undefined) {
+
+  if (game === undefined || game === null) {
     return null
   }
 
@@ -117,26 +116,21 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
       return 'Pick the conditioning player.'
     }
 
-    if (conditionalDraft.equations.length === 0) {
-      return 'Add at least one conditional equation.'
+    if (conditionalDraft.equation.i === '' || conditionalDraft.equation.j === '') {
+      return 'Pick both players for the conditional equation.'
     }
 
-    for (const equation of conditionalDraft.equations) {
-      if (equation.i === '' || equation.j === '') {
-        return 'Pick both players for every equation.'
-      }
+    if (conditionalDraft.equation.i === conditionalDraft.equation.j) {
+      return 'Conditional equations cannot target the same player twice.'
+    }
 
-      if (equation.i === equation.j) {
-        return 'Conditional equations cannot target the same player twice.'
-      }
-
-      if (parseWeight(equation.weight) === null) {
-        return 'Every conditional equation weight must be a nonzero number.'
-      }
+    if (parseWeight(conditionalDraft.equation.weight) === null) {
+      return 'Conditional equation weight must be a nonzero number.'
     }
 
     return null
   }, [conditionalDraft, dyadicDraft, game, mode])
+
   async function handleSave(): Promise<void> {
     if (validationError !== null) {
       return
@@ -169,11 +163,13 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
           playerId: conditionalDraft.playerId,
           color: conditionalDraft.color,
         },
-        equations: conditionalDraft.equations.map((equation) => ({
-          i: equation.i,
-          j: equation.j,
-          weight: parseWeight(equation.weight)!,
-        })),
+        equations: [
+          {
+            i: conditionalDraft.equation.i,
+            j: conditionalDraft.equation.j,
+            weight: parseWeight(conditionalDraft.equation.weight)!,
+          },
+        ],
         note: normalizedNote === '' ? undefined : normalizedNote,
       } satisfies ConditionalTx
     }
@@ -240,7 +236,9 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                   label="Active player"
                   players={game.players}
                   value={dyadicDraft.active}
-                  onChange={(active) => setDyadicDraft((currentDraft) => ({ ...currentDraft, active }))}
+                  onChange={(active) =>
+                    setDyadicDraft((currentDraft) => ({ ...currentDraft, active }))
+                  }
                 />
                 <PlayerPicker
                   label="Passive player"
@@ -259,6 +257,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                   className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
                   type="number"
                   step="0.1"
+                  inputMode="decimal"
                   value={dyadicDraft.weight}
                   onChange={(event) =>
                     setDyadicDraft((currentDraft) => ({
@@ -320,104 +319,59 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 </label>
               </div>
 
-              <div className="space-y-3">
-                {conditionalDraft.equations.map((equation, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="text-sm font-medium text-slate-100">
-                        Equation {index + 1}
-                      </div>
-                      <button
-                        type="button"
-                        className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
-                        disabled={conditionalDraft.equations.length === 1}
-                                onClick={() =>
-                          setConditionalDraft((currentDraft) => ({
-                            ...currentDraft,
-                                    equations: currentDraft.equations.filter(
-                                      (_, equationIndex) => equationIndex !== index,
-                                    ),
-                                  }))
-                                }
-                      >
-                        Remove
-                      </button>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <PlayerPicker
-                        label="Player i"
-                        players={game.players}
-                        value={equation.i}
-                        onChange={(i) =>
-                          setConditionalDraft((currentDraft) => ({
-                            ...currentDraft,
-                            equations: currentDraft.equations.map((currentEquation, equationIndex) =>
-                              equationIndex === index ? { ...currentEquation, i } : currentEquation,
-                            ),
-                          }))
-                        }
-                      />
-                      <PlayerPicker
-                        label="Player j"
-                        players={game.players}
-                        value={equation.j}
-                        onChange={(j) =>
-                          setConditionalDraft((currentDraft) => ({
-                            ...currentDraft,
-                            equations: currentDraft.equations.map((currentEquation, equationIndex) =>
-                              equationIndex === index ? { ...currentEquation, j } : currentEquation,
-                            ),
-                          }))
-                        }
-                      />
-                      <label className="flex flex-col gap-2 text-sm text-slate-300">
-                        <span>Signed weight</span>
-                        <input
-                          aria-label={`Equation ${index + 1} signed weight`}
-                          className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-                          type="number"
-                          step="0.1"
-                          value={equation.weight}
-                          onChange={(event) =>
-                            setConditionalDraft((currentDraft) => ({
-                              ...currentDraft,
-                              equations: currentDraft.equations.map((currentEquation, equationIndex) =>
-                                equationIndex === index
-                                  ? { ...currentEquation, weight: event.target.value }
-                                  : currentEquation,
-                              ),
-                            }))
-                          }
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                <div className="mb-3 text-sm font-medium text-slate-100">Equation</div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <PlayerPicker
+                    label="Player i"
+                    players={game.players}
+                    value={conditionalDraft.equation.i}
+                    onChange={(i) =>
+                      setConditionalDraft((currentDraft) => ({
+                        ...currentDraft,
+                        equation: {
+                          ...currentDraft.equation,
+                          i,
+                        },
+                      }))
+                    }
+                  />
+                  <PlayerPicker
+                    label="Player j"
+                    players={game.players}
+                    value={conditionalDraft.equation.j}
+                    onChange={(j) =>
+                      setConditionalDraft((currentDraft) => ({
+                        ...currentDraft,
+                        equation: {
+                          ...currentDraft.equation,
+                          j,
+                        },
+                      }))
+                    }
+                  />
+                  <label className="flex flex-col gap-2 text-sm text-slate-300">
+                    <span>Equation signed weight</span>
+                    <input
+                      aria-label="Equation signed weight"
+                      className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                      type="number"
+                      step="0.1"
+                      inputMode="decimal"
+                      value={conditionalDraft.equation.weight}
+                      onChange={(event) =>
+                        setConditionalDraft((currentDraft) => ({
+                          ...currentDraft,
+                          equation: {
+                            ...currentDraft.equation,
+                            weight: event.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
               </div>
-
-              <button
-                type="button"
-                className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-200"
-                onClick={() =>
-                  setConditionalDraft((currentDraft) => ({
-                    ...currentDraft,
-                    equations: [
-                      ...currentDraft.equations,
-                      {
-                        i: game.players[0]?.id ?? '',
-                        j: game.players[1]?.id ?? game.players[0]?.id ?? '',
-                        weight: '1',
-                      },
-                    ],
-                  }))
-                }
-              >
-                Add equation
-              </button>
             </>
           )}
 
