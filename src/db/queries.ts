@@ -27,9 +27,9 @@ export function createDefaultGame(): Game {
     name: 'New game',
     createdAt: now,
     updatedAt: now,
-    blueCountMin: 0,
-    blueCountMax: 5,
-    players: Array.from({ length: 5 }, (_, index) => createDefaultPlayer(index)),
+    blueCountMin: 9,
+    blueCountMax: 9,
+    players: Array.from({ length: 12 }, (_, index) => createDefaultPlayer(index)),
   }
 }
 
