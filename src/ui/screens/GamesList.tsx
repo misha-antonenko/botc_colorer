@@ -131,6 +131,9 @@ export function GamesList() {
             <p className="mt-2 max-w-2xl text-sm text-zinc-400">
               Find plausible colorings by logging player interactions.
             </p>
+            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+              All data is stored in your web browser. If you don't export it, it will be deleted soon.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <button
