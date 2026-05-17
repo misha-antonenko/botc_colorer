@@ -372,7 +372,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 <div className="mb-3 text-sm font-medium text-zinc-100">then</div>
                 <div className="grid gap-3 md:grid-cols-3">
                   <PlayerPicker
-                    label="Source player"
+                    label="Active player"
                     players={game.players}
                     value={conditionalDraft.equation.i}
                     onChange={(i) =>
@@ -386,7 +386,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                     }
                   />
                   <PlayerPicker
-                    label="Destination player"
+                    label="Passive player"
                     players={game.players}
                     value={conditionalDraft.equation.j}
                     onChange={(j) =>

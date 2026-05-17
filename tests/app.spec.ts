@@ -23,10 +23,10 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   await page.getByLabel('If player').selectOption({
     label: 'Player 3 (#3)',
   })
-  await page.getByLabel('Source player').selectOption({
+  await page.getByLabel('Active player').selectOption({
     label: 'Player 1 (#1)',
   })
-  await page.getByLabel('Destination player').selectOption({
+  await page.getByLabel('Passive player').selectOption({
     label: 'Player 2 (#2)',
   })
   await page.getByRole('textbox', { name: 'Weight' }).fill('2')
