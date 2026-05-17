@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createConditionalTxFixture,
   createGameFixture,
@@ -8,6 +8,10 @@ import {
 import { ColoringRow } from './ColoringRow'
 
 describe('ColoringRow', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('shows fitness, condition text, and three-character player labels', () => {
     const players = createPlayers(['Mara', 'Milo', 'Eve'])
     const game = createGameFixture({ players })
@@ -31,8 +35,27 @@ describe('ColoringRow', () => {
     )
 
     expect(screen.getByText('Fitness = +1')).toBeInTheDocument()
-    expect(screen.getByText('if Mara is blue')).toBeInTheDocument()
+    expect(screen.getByText(/if Mara is blue/)).toBeInTheDocument()
     expect(screen.getByText('Mar')).toBeInTheDocument()
     expect(screen.getByText('Mil')).toBeInTheDocument()
+  })
+
+  it('stacks fitness under the color strip on narrow layouts', () => {
+    const players = createPlayers(['Mara', 'Milo', 'Eve'])
+    const game = createGameFixture({ players })
+
+    render(
+      <ColoringRow
+        game={game}
+        txs={[]}
+        result={{ c: 5, fitness: 1 }}
+        isTiedWithPrevious={true}
+        expanded={false}
+        onToggle={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Fitness = +1')).toBeInTheDocument()
+    expect(screen.getByText('Tied with the previous one.')).toBeInTheDocument()
   })
 })

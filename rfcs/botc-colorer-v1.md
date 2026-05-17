@@ -79,3 +79,9 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - Solution rows now render `Fitness = …` without the stray leading spacing, conditional breakdown entries show their triggering condition explicitly, and solution cell abbreviations use the first three visible characters of each player name instead of initials.
   - The non-color UI palette is now neutral grayscale: primary actions, tabs, warnings/errors, delete affordances, and matrix intensity cues no longer reuse blue/red accents reserved for actual player-color semantics.
   - Regression coverage now includes blue-range delta unit tests, a setup-tab test for add-player shifting, and a component test for conditional breakdown copy plus three-character solution labels.
+- Fifth device-polish pass:
+  - New games are now named sequentially from the existing local game count, so a fresh game starts as `Game 1`, then `Game 2`, and so on.
+  - Solution rows pack more tightly on small screens: colored cells use smaller snug dimensions, the fitness block drops below the strip instead of leaving a large empty gap, and the visible copy still fits without truncation.
+  - The remaining blue tint in the global background and PWA theme colors is removed; the page gradient, browser theme color, and manifest theme/background colors now use neutral grayscale values.
+  - Transaction list tiles are tighter and vertically centered, reducing unnecessary horizontal padding around the summary text and the enabled checkbox.
+  - Signed weight entry now uses decimal numeric pads plus an inline sign-toggle button (`Support` / `Oppose`) instead of requiring typed `+`/`-`, and the mobile Playwright flow now covers that path.

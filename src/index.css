@@ -20,8 +20,8 @@ body,
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top, rgba(148, 163, 184, 0.16), transparent 35%),
-    linear-gradient(180deg, #020617 0%, #111827 100%);
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 35%),
+    linear-gradient(180deg, #09090b 0%, #18181b 100%);
 }
 
 * {

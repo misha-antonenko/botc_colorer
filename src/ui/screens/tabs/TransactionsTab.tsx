@@ -84,12 +84,12 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
               onDelete={() => void handleDelete(transaction.id)}
             >
               <article
-                className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg shadow-slate-950/30"
+                className="rounded-3xl border border-slate-800 bg-slate-950/80 px-3 py-3 shadow-lg shadow-slate-950/30"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
                     <div
-                      className={`text-sm text-slate-200 ${
+                      className={`text-sm leading-5 text-slate-200 ${
                         isEnabled ? '' : 'line-through text-slate-500'
                       }`}
                     >
@@ -97,7 +97,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                     </div>
                   </div>
 
-                  <label className="inline-flex shrink-0 items-center rounded-md border border-slate-700 bg-slate-900/80 p-2 text-xs text-slate-300">
+                  <label className="inline-flex shrink-0 items-center rounded-md border border-slate-700 bg-slate-900/80 p-1.5 text-xs text-slate-300">
                     <input
                       aria-label="Enabled"
                       type="checkbox"

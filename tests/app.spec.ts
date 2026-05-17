@@ -4,7 +4,7 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   await page.goto('/')
   await page.getByRole('button', { name: 'New game' }).click()
 
-  await expect(page.getByRole('heading', { name: 'New game' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Game 1' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Add player' }).click()
   await page.getByLabel('Player 6 name').fill('Frank')
@@ -12,7 +12,7 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
 
   await page.getByRole('button', { name: 'Transactions' }).click()
   await page.getByRole('link', { name: 'Add transaction' }).click()
-  await page.getByLabel('Signed weight').fill('2')
+  await page.getByRole('textbox', { name: 'Signed weight' }).fill('2')
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
   await page.getByRole('link', { name: 'Add transaction' }).click()
@@ -26,7 +26,8 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   await page.getByLabel('Player j').selectOption({
     label: 'Player 2 (#2)',
   })
-  await page.getByLabel('Equation signed weight').fill('-2')
+  await page.getByRole('textbox', { name: 'Equation signed weight' }).fill('2')
+  await page.getByLabel('Equation signed weight sign toggle').click()
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
   await page.getByRole('button', { name: 'Solutions' }).click()

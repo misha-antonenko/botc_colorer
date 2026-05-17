@@ -19,12 +19,12 @@ function touchGame(game: Game): Game {
   }
 }
 
-export function createDefaultGame(): Game {
+export function createDefaultGame(existingGameCount = 0): Game {
   const now = Date.now()
 
   return {
     id: crypto.randomUUID(),
-    name: 'New game',
+    name: `Game ${existingGameCount + 1}`,
     createdAt: now,
     updatedAt: now,
     blueCountMin: 9,
@@ -96,8 +96,12 @@ export function useAllTransactions(): Transaction[] | undefined {
 }
 
 export async function createGame(): Promise<Game> {
-  const game = createDefaultGame()
-  await db.games.put(encodeGameRow(game))
+  const game = await db.transaction('rw', db.games, async () => {
+    const existingGameCount = await db.games.count()
+    const nextGame = createDefaultGame(existingGameCount)
+    await db.games.put(encodeGameRow(nextGame))
+    return nextGame
+  })
   await snapshotGameState(game.id)
   return game
 }

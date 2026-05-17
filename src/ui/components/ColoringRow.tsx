@@ -45,25 +45,25 @@ export function ColoringRow({
         aria-expanded={expanded}
         onClick={onToggle}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {colors.map((color, index) => (
               <span
                 key={index}
-                className={`flex h-11 w-11 flex-col items-center justify-center rounded-lg border ${
+                className={`flex min-h-9 min-w-[2.35rem] flex-col items-center justify-center rounded-md border px-1 ${
                   color === 'blue'
                     ? 'border-blue-300/40 bg-blue-500/80 text-white'
                     : 'border-red-300/40 bg-red-500/80 text-white'
                 }`}
               >
-                <span className="text-xs font-bold">{index + 1}</span>
-                <span className="text-[8px] leading-none opacity-90">
+                <span className="text-[10px] font-bold leading-none">{index + 1}</span>
+                <span className="mt-0.5 text-[7px] leading-none opacity-90">
                   {getPlayerCellLabel(game.players[index]?.name ?? '')}
                 </span>
               </span>
             ))}
           </div>
-          <div className="text-right">
+          <div className="self-start sm:text-right">
             <div className="text-lg font-semibold text-slate-100">
               {`Fitness = ${formatSignedNumber(result.fitness)}`}
             </div>

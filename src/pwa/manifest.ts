@@ -7,8 +7,8 @@ export function createManifest(base: string): Partial<ManifestOptions> {
     description:
       'Track blue and red team-color inferences for Blood on the Clocktower games.',
     display: 'standalone',
-    background_color: '#020617',
-    theme_color: '#0f172a',
+    background_color: '#09090b',
+    theme_color: '#18181b',
     start_url: base,
     scope: base,
     icons: [

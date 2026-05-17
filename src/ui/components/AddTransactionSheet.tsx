@@ -30,6 +30,12 @@ interface ConditionalDraft {
   equation: EquationDraft
 }
 
+interface SignedWeightFieldProps {
+  label: string
+  value: string
+  onChange: (nextValue: string) => void
+}
+
 function getDefaultDyadicDraft(game: Game | undefined): DyadicDraft {
   const players = game?.players ?? []
 
@@ -62,6 +68,75 @@ function parseWeight(value: string): number | null {
   }
 
   return parsed
+}
+
+function isNegativeWeight(value: string): boolean {
+  return value.trim().startsWith('-')
+}
+
+function getWeightMagnitude(value: string): string {
+  return value.trim().replace(/^[+-]/, '')
+}
+
+function normalizeMagnitudeInput(value: string): string | null {
+  const normalized = value.replace(',', '.')
+  return /^(\d+(\.\d*)?|\.\d*|)$/.test(normalized) ? normalized : null
+}
+
+function updateWeightMagnitude(currentValue: string, nextMagnitudeValue: string): string {
+  const normalizedMagnitude = normalizeMagnitudeInput(nextMagnitudeValue)
+
+  if (normalizedMagnitude === null) {
+    return currentValue
+  }
+
+  if (normalizedMagnitude === '') {
+    return ''
+  }
+
+  return `${isNegativeWeight(currentValue) ? '-' : ''}${normalizedMagnitude}`
+}
+
+function toggleWeightSign(currentValue: string): string {
+  const magnitude = getWeightMagnitude(currentValue)
+
+  if (magnitude === '') {
+    return isNegativeWeight(currentValue) ? '1' : '-1'
+  }
+
+  return isNegativeWeight(currentValue) ? magnitude : `-${magnitude}`
+}
+
+function SignedWeightField({ label, value, onChange }: SignedWeightFieldProps) {
+  const negative = isNegativeWeight(value)
+
+  return (
+    <div className="flex items-end gap-2">
+      <label className="flex min-w-0 flex-1 flex-col gap-2 text-sm text-slate-300">
+        <span>{label}</span>
+        <input
+          aria-label={label}
+          className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*[.,]?[0-9]*"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          value={getWeightMagnitude(value)}
+          onChange={(event) => onChange(updateWeightMagnitude(value, event.target.value))}
+        />
+      </label>
+      <button
+        type="button"
+        aria-label={`${label} sign toggle`}
+        className="mb-0.5 min-w-24 rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+        onClick={() => onChange(toggleWeightSign(value))}
+      >
+        {negative ? 'Oppose' : 'Support'}
+      </button>
+    </div>
+  )
 }
 
 export function AddTransactionSheet() {
@@ -250,46 +325,16 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 />
               </div>
 
-              <label className="flex flex-col gap-2 text-sm text-slate-300">
-                <span>Signed weight</span>
-                <input
-                  aria-label="Signed weight"
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
-                  type="text"
-                  inputMode="text"
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  value={dyadicDraft.weight}
-                  onChange={(event) =>
-                    setDyadicDraft((currentDraft) => ({
-                      ...currentDraft,
-                      weight: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
-                  onClick={() =>
-                    setDyadicDraft((currentDraft) => ({ ...currentDraft, weight: '1' }))
-                  }
-                >
-                  Support (+1)
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
-                  onClick={() =>
-                    setDyadicDraft((currentDraft) => ({ ...currentDraft, weight: '-1' }))
-                  }
-                >
-                  Oppose (-1)
-                </button>
-              </div>
+              <SignedWeightField
+                label="Signed weight"
+                value={dyadicDraft.weight}
+                onChange={(weight) =>
+                  setDyadicDraft((currentDraft) => ({
+                    ...currentDraft,
+                    weight,
+                  }))
+                }
+              />
             </>
           ) : (
             <>
@@ -352,28 +397,19 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                       }))
                     }
                   />
-                  <label className="flex flex-col gap-2 text-sm text-slate-300">
-                    <span>Equation signed weight</span>
-                    <input
-                      aria-label="Equation signed weight"
-                      className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
-                      type="text"
-                      inputMode="text"
-                      autoCapitalize="off"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      value={conditionalDraft.equation.weight}
-                      onChange={(event) =>
-                        setConditionalDraft((currentDraft) => ({
-                          ...currentDraft,
-                          equation: {
-                            ...currentDraft.equation,
-                            weight: event.target.value,
-                          },
-                        }))
-                      }
-                    />
-                  </label>
+                  <SignedWeightField
+                    label="Equation signed weight"
+                    value={conditionalDraft.equation.weight}
+                    onChange={(weight) =>
+                      setConditionalDraft((currentDraft) => ({
+                        ...currentDraft,
+                        equation: {
+                          ...currentDraft.equation,
+                          weight,
+                        },
+                      }))
+                    }
+                  />
                 </div>
               </div>
             </>
