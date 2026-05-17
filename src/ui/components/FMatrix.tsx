@@ -8,13 +8,16 @@ interface FMatrixProps {
   txs: Transaction[]
 }
 
+const ZINC_950_RGB = '9, 9, 11'
+const ZINC_400_RGB = '161, 161, 170'
+
 function getCellTint(value: number, maxAbsDirected: number): string {
   if (value === 0 || maxAbsDirected === 0) {
-    return 'rgba(15, 23, 42, 0.85)'
+    return `rgba(${ZINC_950_RGB}, 0.85)`
   }
 
   const intensity = 0.14 + 0.32 * (Math.abs(value) / maxAbsDirected)
-  return `rgba(148, 163, 184, ${intensity})`
+  return `rgba(${ZINC_400_RGB}, ${intensity})`
 }
 
 export function FMatrix({ game, txs }: FMatrixProps) {
@@ -61,7 +64,7 @@ export function FMatrix({ game, txs }: FMatrixProps) {
                     className="border-b border-r border-zinc-800 px-2 py-2 align-top font-mono text-[11px] leading-tight text-zinc-100"
                     style={{
                       backgroundColor: isDiagonal
-                        ? 'rgba(15, 23, 42, 0.95)'
+                        ? `rgba(${ZINC_950_RGB}, 0.95)`
                         : getCellTint(directedWeight, stateMatrix.maxAbsDirected),
                     }}
                   >

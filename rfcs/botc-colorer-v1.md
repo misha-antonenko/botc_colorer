@@ -92,3 +92,5 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - The remaining non-player-color UI chrome now uses the zinc palette rather than slate, so cards, tabs, borders, text, and matrix chrome read as neutral gray instead of blue-gray; the games-list `Open` pill also uses centered inline-flex styling so its text aligns with the other buttons.
   - Mobile zoom resistance is reinforced in two places: text-entry controls are pinned to at least 16px and the viewport meta tag now caps scale at `1.0`, preventing focus-triggered zoom jumps on iOS.
   - Regression coverage now includes a transactions-tab unit test for saved notes plus Playwright checks for the renamed labels, visible saved notes, 16px weight-field sizing, and the locked mobile viewport meta tag.
+- Follow-up matrix polish:
+  - The `f` matrix no longer uses leftover slate RGB constants for its inline cell backgrounds; both zero/diagonal fills and weighted intensity tints now use zinc-based RGBA values, with a component test locking the expected neutral colors.
