@@ -129,7 +129,7 @@ export function GamesList() {
             </div>
             <h1 className="mt-2 text-3xl font-bold text-white">Games</h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Track support, opposition, and conditional information locally on-device.
+              Find plausible colorings by logging player interactions.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
