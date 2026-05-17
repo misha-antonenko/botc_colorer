@@ -409,7 +409,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Players</h2>
             <p className="text-sm text-slate-400">
-              Drag to reorder seats, rename players, and cycle fixed colors.
+              Drag to reorder.
             </p>
           </div>
           <button
