@@ -32,6 +32,6 @@ describe('SolutionsTab', () => {
       />,
     )
 
-    expect(screen.getAllByText('tied with previous')).toHaveLength(2)
+    expect(screen.getAllByText('Tied with the previous one.')).toHaveLength(2)
   })
 })

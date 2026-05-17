@@ -34,7 +34,7 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Solutions</h2>
             <p className="text-sm text-slate-400">
-              Ranked by fitness, then the documented lexicographic tie-breaker.
+              Ranked by fitness, then lexicographically.
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-300">

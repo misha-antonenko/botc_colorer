@@ -63,7 +63,7 @@ export function ColoringRow({
               Fitness {formatSignedNumber(result.fitness)}
             </div>
             {isTiedWithPrevious ? (
-              <div className="text-xs text-slate-400">tied with previous</div>
+              <div className="text-xs text-slate-400">Tied with the previous one.</div>
             ) : null}
           </div>
         </div>

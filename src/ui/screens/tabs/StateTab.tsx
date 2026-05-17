@@ -16,9 +16,9 @@ export function StateTab({ game, txs }: StateTabProps) {
     <div className="space-y-4">
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg shadow-slate-950/30">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-100">f matrix</h2>
+          <h2 className="text-lg font-semibold text-slate-100">Interaction matrix</h2>
           <p className="text-sm text-slate-400">
-            Directed dyadic weights with symmetric conditional contribution ranges.
+            Dyadic weights with conditional contribution ranges.
           </p>
         </div>
         <FMatrix game={game} txs={txs} />
