@@ -34,6 +34,7 @@ interface SignedWeightFieldProps {
   label: string
   value: string
   onChange: (nextValue: string) => void
+  toggleLabel: string
 }
 
 function getDefaultDyadicDraft(game: Game | undefined): DyadicDraft {
@@ -107,16 +108,16 @@ function toggleWeightSign(currentValue: string): string {
   return isNegativeWeight(currentValue) ? magnitude : `-${magnitude}`
 }
 
-function SignedWeightField({ label, value, onChange }: SignedWeightFieldProps) {
+function SignedWeightField({ label, value, onChange, toggleLabel }: SignedWeightFieldProps) {
   const negative = isNegativeWeight(value)
 
   return (
     <div className="flex items-end gap-2">
-      <label className="flex min-w-0 flex-1 flex-col gap-2 text-sm text-slate-300">
+      <label className="flex min-w-0 flex-1 flex-col gap-2 text-sm text-zinc-300">
         <span>{label}</span>
         <input
           aria-label={label}
-          className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
+          className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
           type="text"
           inputMode="decimal"
           pattern="[0-9]*[.,]?[0-9]*"
@@ -129,8 +130,8 @@ function SignedWeightField({ label, value, onChange }: SignedWeightFieldProps) {
       </label>
       <button
         type="button"
-        aria-label={`${label} sign toggle`}
-        className="mb-0.5 min-w-24 rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+        aria-label={toggleLabel}
+        className="mb-0.5 min-w-24 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
         onClick={() => onChange(toggleWeightSign(value))}
       >
         {negative ? 'Oppose' : 'Support'}
@@ -188,11 +189,11 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
     }
 
     if (conditionalDraft.playerId === '') {
-      return 'Pick the conditioning player.'
+      return 'Pick the player for the condition.'
     }
 
     if (conditionalDraft.equation.i === '' || conditionalDraft.equation.j === '') {
-      return 'Pick both players for the conditional equation.'
+      return 'Pick both players for the then clause.'
     }
 
     if (conditionalDraft.equation.i === conditionalDraft.equation.j) {
@@ -200,7 +201,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
     }
 
     if (parseWeight(conditionalDraft.equation.weight) === null) {
-      return 'Conditional equation weight must be a nonzero number.'
+      return 'Conditional weight must be a nonzero number.'
     }
 
     return null
@@ -262,29 +263,29 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
-      <div className="safe-bottom w-full max-w-2xl rounded-t-3xl border border-slate-800 bg-slate-950 px-4 py-5 shadow-2xl shadow-slate-950/80">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-zinc-950/75 p-4 backdrop-blur-sm">
+      <div className="safe-bottom w-full max-w-2xl rounded-t-3xl border border-zinc-800 bg-zinc-950 px-4 py-5 shadow-2xl shadow-zinc-950/80">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">Add transaction</h2>
-            <p className="text-sm text-slate-400">Create a dyadic or conditional observation.</p>
+            <h2 className="text-lg font-semibold text-zinc-100">Add transaction</h2>
+            <p className="text-sm text-zinc-400">Create a dyadic or conditional observation.</p>
           </div>
           <button
             type="button"
-            className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-200"
+            className="rounded-full border border-zinc-700 px-3 py-2 text-sm text-zinc-200"
             onClick={() => navigate(`/g/${game.id}`)}
           >
             Close
           </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-1">
+        <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-1">
           <button
             type="button"
             className={`rounded-xl px-3 py-2 text-sm font-medium ${
               mode === 'dyadic'
-                ? 'bg-slate-200 text-slate-950'
-                : 'text-slate-300 hover:bg-slate-800'
+                ? 'bg-zinc-200 text-zinc-950'
+                : 'text-zinc-300 hover:bg-zinc-800'
             }`}
             onClick={() => setMode('dyadic')}
           >
@@ -294,8 +295,8 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
             type="button"
             className={`rounded-xl px-3 py-2 text-sm font-medium ${
               mode === 'conditional'
-                ? 'bg-slate-200 text-slate-950'
-                : 'text-slate-300 hover:bg-slate-800'
+                ? 'bg-zinc-200 text-zinc-950'
+                : 'text-zinc-300 hover:bg-zinc-800'
             }`}
             onClick={() => setMode('conditional')}
           >
@@ -326,7 +327,8 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
               </div>
 
               <SignedWeightField
-                label="Signed weight"
+                label="Weight"
+                toggleLabel="Toggle dyadic weight sign"
                 value={dyadicDraft.weight}
                 onChange={(weight) =>
                   setDyadicDraft((currentDraft) => ({
@@ -340,18 +342,18 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
             <>
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <PlayerPicker
-                  label="Conditioning player"
+                  label="If player"
                   players={game.players}
                   value={conditionalDraft.playerId}
                   onChange={(playerId) =>
                     setConditionalDraft((currentDraft) => ({ ...currentDraft, playerId }))
                   }
                 />
-                <label className="flex flex-col gap-2 text-sm text-slate-300">
-                  <span>Conditioning color</span>
+                <label className="flex flex-col gap-2 text-sm text-zinc-300">
+                  <span>is</span>
                   <select
-                    aria-label="Conditioning color"
-                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
+                    aria-label="is"
+                    className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
                     value={conditionalDraft.color}
                     onChange={(event) =>
                       setConditionalDraft((currentDraft) => ({
@@ -366,11 +368,11 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 </label>
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-                <div className="mb-3 text-sm font-medium text-slate-100">Equation</div>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3">
+                <div className="mb-3 text-sm font-medium text-zinc-100">then</div>
                 <div className="grid gap-3 md:grid-cols-3">
                   <PlayerPicker
-                    label="Player i"
+                    label="Source player"
                     players={game.players}
                     value={conditionalDraft.equation.i}
                     onChange={(i) =>
@@ -384,7 +386,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                     }
                   />
                   <PlayerPicker
-                    label="Player j"
+                    label="Destination player"
                     players={game.players}
                     value={conditionalDraft.equation.j}
                     onChange={(j) =>
@@ -398,7 +400,8 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                     }
                   />
                   <SignedWeightField
-                    label="Equation signed weight"
+                    label="Weight"
+                    toggleLabel="Toggle conditional weight sign"
                     value={conditionalDraft.equation.weight}
                     onChange={(weight) =>
                       setConditionalDraft((currentDraft) => ({
@@ -415,11 +418,11 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
             </>
           )}
 
-          <label className="flex flex-col gap-2 text-sm text-slate-300">
+          <label className="flex flex-col gap-2 text-sm text-zinc-300">
             <span>Note</span>
             <textarea
               aria-label="Note"
-              className="min-h-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
+              className="min-h-24 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
               value={note}
               onChange={(event) => setNote(event.target.value)}
             />
@@ -427,12 +430,12 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
         </div>
 
         {validationError === null ? null : (
-          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-200">
+          <div className="mt-4 rounded-xl border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-200">
             {validationError}
           </div>
         )}
         {error === null ? null : (
-          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-200">
+          <div className="mt-4 rounded-xl border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-200">
             {error}
           </div>
         )}
@@ -440,14 +443,14 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
         <div className="mt-5 flex justify-end gap-3">
           <button
             type="button"
-            className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200"
+            className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200"
             onClick={() => navigate(`/g/${game.id}`)}
           >
             Cancel
           </button>
           <button
             type="button"
-            className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            className="rounded-full bg-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
             disabled={validationError !== null || saving}
             onClick={() => void handleSave()}
           >

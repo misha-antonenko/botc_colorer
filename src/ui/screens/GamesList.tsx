@@ -121,35 +121,35 @@ export function GamesList() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6">
-      <header className="mb-6 rounded-3xl border border-slate-800 bg-slate-950/80 p-5 shadow-2xl shadow-slate-950/40">
+      <header className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-950/80 p-5 shadow-2xl shadow-zinc-950/40">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">
+            <div className="text-sm uppercase tracking-[0.25em] text-zinc-400">
               BotC colorer
             </div>
             <h1 className="mt-2 text-3xl font-bold text-white">Games</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">
+            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
               Track support, opposition, and conditional information locally on-device.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
+              className="rounded-full bg-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-950"
               onClick={() => void handleCreateGame()}
             >
               New game
             </button>
             <button
               type="button"
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200"
+              className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200"
               onClick={() => fileInputRef.current?.click()}
             >
               Import
             </button>
             <button
               type="button"
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200"
+              className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200"
               onClick={() => void handleExportAll()}
             >
               Export all
@@ -166,9 +166,9 @@ export function GamesList() {
       </header>
 
       {games.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-950/60 p-8 text-center text-slate-300">
-          <div className="text-lg font-semibold text-slate-100">No games yet</div>
-          <p className="mt-2 text-sm text-slate-400">
+        <div className="rounded-3xl border border-dashed border-zinc-700 bg-zinc-950/60 p-8 text-center text-zinc-300">
+          <div className="text-lg font-semibold text-zinc-100">No games yet</div>
+          <p className="mt-2 text-sm text-zinc-400">
             Start by creating a game, then use the workspace tabs to build observations and review
             candidate colorings.
           </p>
@@ -182,22 +182,22 @@ export function GamesList() {
             return (
               <article
                 key={game.id}
-                className="rounded-3xl border border-slate-800 bg-slate-950/80 p-5 shadow-2xl shadow-slate-950/30"
+                className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-5 shadow-2xl shadow-zinc-950/30"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-xl font-semibold text-white">{game.name}</h2>
-                      <span className="rounded-full border border-slate-700 px-2 py-1 text-xs text-slate-300">
+                      <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">
                         {game.players.length} players
                       </span>
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-zinc-400">
                       Last updated {formatTimestamp(game.updatedAt)}
                     </div>
-                    <div className="text-sm text-slate-300">
+                    <div className="text-sm text-zinc-300">
                       Top fitness:{' '}
-                      <span className="font-mono text-slate-100">
+                      <span className="font-mono text-zinc-100">
                         {previewFitness === null ? '—' : formatSignedNumber(previewFitness)}
                       </span>
                     </div>
@@ -205,28 +205,28 @@ export function GamesList() {
 
                   <div className="flex flex-wrap gap-2">
                     <Link
-                      className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
+                      className="inline-flex items-center justify-center rounded-full bg-zinc-200 px-4 py-2 text-sm font-semibold leading-none text-zinc-950"
                       to={`/g/${game.id}`}
                     >
                       Open
                     </Link>
                     <button
                       type="button"
-                      className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200"
+                      className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200"
                       onClick={() => void handleDuplicateGame(game.id)}
                     >
                       Duplicate
                     </button>
                     <button
                       type="button"
-                      className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200"
+                      className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200"
                       onClick={() => void handleExportGame(game.id, game.name)}
                     >
                       Export
                     </button>
                     <button
                       type="button"
-                      className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={latestSnapshot === null || latestSnapshot === undefined}
                       onClick={() => void handleRestoreSnapshot(game.id)}
                     >

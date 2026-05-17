@@ -16,11 +16,11 @@ export function PlayerPicker({
   disabled = false,
 }: PlayerPickerProps) {
   return (
-    <label className="flex flex-col gap-2 text-sm text-slate-300">
+    <label className="flex flex-col gap-2 text-sm text-zinc-300">
       <span>{label}</span>
       <select
         aria-label={label}
-        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100"
+        className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
         value={value}
         disabled={disabled || players.length === 0}
         onChange={(event) => onChange(event.target.value)}

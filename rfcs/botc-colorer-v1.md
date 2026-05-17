@@ -85,3 +85,10 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - The remaining blue tint in the global background and PWA theme colors is removed; the page gradient, browser theme color, and manifest theme/background colors now use neutral grayscale values.
   - Transaction list tiles are tighter and vertically centered, reducing unnecessary horizontal padding around the summary text and the enabled checkbox.
   - Signed weight entry now uses decimal numeric pads plus an inline sign-toggle button (`Support` / `Oppose`) instead of requiring typed `+`/`-`, and the mobile Playwright flow now covers that path.
+- Sixth device-polish pass:
+  - Transaction weight fields are now both labeled simply `Weight`, and the sign-toggle buttons use distinct accessibility labels so generic weight field names stay unambiguous in tests and assistive tech.
+  - The conditional transaction form now reads as a sentence: `If player`, `is`, `then`, `Source player`, and `Destination player`, with matching validation copy for the revised terms.
+  - Transaction notes render beneath the transaction summary in the transactions tab, preserving line breaks and disabled styling instead of disappearing after save.
+  - The remaining non-player-color UI chrome now uses the zinc palette rather than slate, so cards, tabs, borders, text, and matrix chrome read as neutral gray instead of blue-gray; the games-list `Open` pill also uses centered inline-flex styling so its text aligns with the other buttons.
+  - Mobile zoom resistance is reinforced in two places: text-entry controls are pinned to at least 16px and the viewport meta tag now caps scale at `1.0`, preventing focus-triggered zoom jumps on iOS.
+  - Regression coverage now includes a transactions-tab unit test for saved notes plus Playwright checks for the renamed labels, visible saved notes, 16px weight-field sizing, and the locked mobile viewport meta tag.
