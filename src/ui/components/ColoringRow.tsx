@@ -91,18 +91,13 @@ export function ColoringRow({
                     {formatSignedNumber(contribution.contribution)}
                   </span>
                 </div>
-                {contribution.condition === undefined ? null : (
-                  <div className="mt-1 text-xs text-slate-400">
-                    {formatConditionSummary(
-                      game,
-                      contribution.condition.playerId,
-                      contribution.condition.color,
-                    )}
-                  </div>
-                )}
                 <div className="mt-1 text-xs text-slate-400">
-                  {contribution.sourceKind === 'dyadic' ? 'Dyadic' : 'Conditional'} ·{' '}
                   {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
+                  {contribution.condition === undefined ? null : ' · ' + formatConditionSummary(
+                    game,
+                    contribution.condition.playerId,
+                    contribution.condition.color,
+                  )}
                 </div>
               </div>
             ))}
