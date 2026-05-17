@@ -2,14 +2,14 @@ const STANDARD_BLUE_COUNTS: Record<number, number> = {
   5: 3,
   6: 4,
   7: 5,
-  8: 5,
-  9: 6,
+  8: 6,
+  9: 7,
   10: 7,
-  11: 7,
-  12: 8,
+  11: 8,
+  12: 9,
   13: 9,
-  14: 9,
-  15: 10,
+  14: 10,
+  15: 11,
 }
 
 function clamp(value: number, max: number): number {
