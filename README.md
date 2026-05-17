@@ -6,7 +6,7 @@ The app models player interactions via a variation on the Ising model and minimi
 
 ## Usage
 
-1. Open the app URL.
+1. Open the app: https://misha-antonenko.github.io/botc_colorer/.
 2. Tap **New game**.
 3. Configure players and blue-count bounds in **Setup**.
 4. Add observations in **Transactions**.
