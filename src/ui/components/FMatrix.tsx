@@ -14,9 +14,7 @@ function getCellTint(value: number, maxAbsDirected: number): string {
   }
 
   const intensity = 0.14 + 0.32 * (Math.abs(value) / maxAbsDirected)
-  return value > 0
-    ? `rgba(59, 130, 246, ${intensity})`
-    : `rgba(239, 68, 68, ${intensity})`
+  return `rgba(148, 163, 184, ${intensity})`
 }
 
 export function FMatrix({ game, txs }: FMatrixProps) {

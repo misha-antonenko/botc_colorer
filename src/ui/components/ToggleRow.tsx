@@ -24,7 +24,7 @@ export function ToggleRow({
       <input
         aria-label={label}
         type="checkbox"
-        className="h-5 w-5 accent-blue-500"
+        className="h-5 w-5 accent-slate-300"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}

@@ -1,10 +1,14 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { createGameFixture, createPlayers } from '../../../test/fixtures'
 import { SetupTab } from './SetupTab'
 
 describe('SetupTab', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('uses numeric input mode and allows temporary out-of-range typing for blue counts', async () => {
     const user = userEvent.setup()
     const game = createGameFixture({
@@ -25,16 +29,21 @@ describe('SetupTab', () => {
     expect(minimumInput).toHaveValue('12')
   })
 
-  it('shows an inclusive blue-count summary', () => {
+  it('shifts the blue range when a player is added', async () => {
+    const user = userEvent.setup()
     const game = createGameFixture({
-      players: createPlayers(['Alice', 'Bob', 'Carol', 'Dan', 'Eve']),
-      blueCountMin: 1,
-      blueCountMax: 3,
+      players: createPlayers(['Alice', 'Bob', 'Carol', 'Dan', 'Eve', 'Frank']),
+      blueCountMin: 3,
+      blueCountMax: 5,
     })
 
     render(<SetupTab game={game} txs={[]} />)
 
-    expect(screen.getAllByText('Allowed blue totals (inclusive): 1-3')).not.toHaveLength(0)
-    expect(screen.getAllByLabelText('Allowed blue totals')).not.toHaveLength(0)
+    const addPlayerButtons = screen.getAllByRole('button', { name: 'Add player' })
+    await user.click(addPlayerButtons[addPlayerButtons.length - 1]!)
+
+    expect(screen.getByLabelText('Blue count minimum')).toHaveValue('4')
+    expect(screen.getByLabelText('Blue count maximum')).toHaveValue('6')
+    expect(screen.queryByText(/Allowed blue totals/i)).not.toBeInTheDocument()
   })
 })

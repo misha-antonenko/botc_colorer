@@ -38,7 +38,7 @@ export function GameWorkspace() {
             This game does not exist on this device anymore.
           </p>
           <Link
-            className="mt-5 inline-flex rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-5 inline-flex rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
             to="/"
           >
             Back to games
@@ -66,7 +66,7 @@ export function GameWorkspace() {
       <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/95 px-4 py-4 backdrop-blur">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <Link className="text-sm text-blue-300" to="/">
+            <Link className="text-sm text-slate-200 underline decoration-slate-600 underline-offset-4" to="/">
               ← Back to games
             </Link>
             <h1 className="mt-2 text-2xl font-semibold text-white">{game.name}</h1>
@@ -83,7 +83,7 @@ export function GameWorkspace() {
               type="button"
               className={`rounded-2xl px-3 py-2 text-sm font-medium ${
                 activeTab === tab.key
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-slate-200 text-slate-950'
                   : 'border border-slate-700 bg-slate-900/80 text-slate-300'
               }`}
               onClick={() => setActiveTab(game.id, tab.key)}

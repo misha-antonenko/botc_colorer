@@ -101,7 +101,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                     <input
                       aria-label="Enabled"
                       type="checkbox"
-                      className="h-5 w-5 accent-blue-500"
+                      className="h-5 w-5 accent-slate-300"
                       checked={isEnabled}
                       onChange={(event) => {
                         const enabled = event.target.checked
@@ -140,12 +140,12 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
       )}
 
       {undoState === null ? null : (
-        <div className="fixed inset-x-4 bottom-24 z-30 rounded-2xl border border-amber-400/40 bg-slate-950/95 px-4 py-3 text-sm text-slate-200 shadow-2xl shadow-slate-950/60">
+        <div className="fixed inset-x-4 bottom-24 z-30 rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 text-sm text-slate-200 shadow-2xl shadow-slate-950/60">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>Transaction deleted. Undo is available for 5 seconds.</span>
             <button
               type="button"
-              className="rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950"
+              className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
               onClick={() => void handleUndo()}
             >
               Undo
@@ -155,14 +155,14 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
       )}
 
       {error === null ? null : (
-        <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-200">
           {error}
         </div>
       )}
 
       <Link
         aria-label="Add transaction"
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-3xl font-semibold text-white shadow-2xl shadow-blue-500/30"
+        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 text-3xl font-semibold text-slate-950 shadow-2xl shadow-slate-950/50"
         to={`/g/${game.id}/tx/new`}
       >
         +

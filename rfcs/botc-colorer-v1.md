@@ -73,3 +73,9 @@ Build the single-page PWA defined in `docs/init.md`: local-only game tracking fo
   - The blue-count tile now shows inline min/max fields, explicit inclusive allowed totals, and numeric chips instead of unlabeled bars; impossible counts above the player count are normalized away on blur instead of being persisted.
   - Solver breakdown entries now share the same signed-equation satisfaction logic as the fitness computation, so negative-weight equations only show as satisfied when the players differ and their displayed contribution sign matches the score.
   - Regression coverage now includes negative-weight solver/breakdown tests, a direct pointer-event test for swipe-to-delete, and a mobile Playwright check for setup layout and input sizing.
+- Fourth device-polish pass:
+  - Blue-range adjustments now follow the standard BotC good-player step pattern when seats are added or removed, shifting the current min/max range by the same delta instead of leaving it static.
+  - The blue-range tile is simpler again: min/max remain inline, the confusing allowed-total chips are gone, and the remaining copy only explains the automatic shift behavior.
+  - Solution rows now render `Fitness = …` without the stray leading spacing, conditional breakdown entries show their triggering condition explicitly, and solution cell abbreviations use the first three visible characters of each player name instead of initials.
+  - The non-color UI palette is now neutral grayscale: primary actions, tabs, warnings/errors, delete affordances, and matrix intensity cues no longer reuse blue/red accents reserved for actual player-color semantics.
+  - Regression coverage now includes blue-range delta unit tests, a setup-tab test for add-player shifting, and a component test for conditional breakdown copy plus three-character solution labels.

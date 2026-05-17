@@ -101,14 +101,14 @@ export function SwipeActionRow({
   return (
     <div className="relative w-full overflow-hidden rounded-3xl">
       <div
-        className={`absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500/15 transition-opacity ${
+        className={`absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-slate-800/80 transition-opacity ${
           offset < 0 && !actionDisabled ? 'opacity-100' : 'opacity-0'
         }`}
       >
         <button
           type="button"
           aria-label={deleteLabel}
-          className="rounded-full border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           disabled={actionDisabled || offset !== -SWIPE_ACTION_WIDTH}
           onClick={() => {
             closeRow()

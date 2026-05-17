@@ -135,7 +135,7 @@ export function GamesList() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white"
+              className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
               onClick={() => void handleCreateGame()}
             >
               New game
@@ -205,7 +205,7 @@ export function GamesList() {
 
                   <div className="flex flex-wrap gap-2">
                     <Link
-                      className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white"
+                      className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-950"
                       to={`/g/${game.id}`}
                     >
                       Open

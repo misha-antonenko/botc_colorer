@@ -76,6 +76,10 @@ export interface ColoringContribution {
   sourceKind: Transaction['kind']
   i: PlayerId
   j: PlayerId
+  condition?: {
+    playerId: PlayerId
+    color: Color
+  }
   weight: number
   satisfied: boolean
   contribution: number

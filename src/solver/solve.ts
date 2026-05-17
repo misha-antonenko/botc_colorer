@@ -280,6 +280,10 @@ export function buildColoringContributionBreakdown(
         sourceKind: tx.kind,
         i: equation.i,
         j: equation.j,
+        condition: {
+          playerId: tx.condition.playerId,
+          color: tx.condition.color,
+        },
         weight,
         satisfied,
         contribution: getEquationContribution(coloring, i, j, weight),

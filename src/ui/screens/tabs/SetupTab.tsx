@@ -16,6 +16,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 import { saveGame } from '../../../db/queries'
+import { shiftBlueRangeWithPlayerCount } from '../../../solver/blueRange'
 import type { Color, Game, Player, Transaction } from '../../../solver/types'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
 
@@ -84,16 +85,6 @@ function clampBlueCount(value: number, playerCount: number): number {
   return Math.max(0, Math.min(value, playerCount))
 }
 
-function formatAllowedBlueTotals(min: number, max: number, isValid: boolean): string {
-  if (!isValid) {
-    return 'No blue totals currently allowed.'
-  }
-
-  return min === max
-    ? `Allowed blue totals (inclusive): ${min}`
-    : `Allowed blue totals (inclusive): ${min}-${max}`
-}
-
 function reorderPlayers(players: Player[], activeId: string, overId: string): Player[] {
   const activeIndex = players.findIndex((player) => player.id === activeId)
   const overIndex = players.findIndex((player) => player.id === overId)
@@ -142,7 +133,7 @@ function SortablePlayerCard({
       <div
         ref={setNodeRef}
         className={`w-full min-w-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-2.5 ${
-          isDragging ? 'shadow-2xl shadow-blue-500/20 ring-1 ring-blue-400/40' : ''
+          isDragging ? 'shadow-2xl shadow-slate-950/60 ring-1 ring-slate-400/30' : ''
         }`}
         style={{
           transform: CSS.Transform.toString(transform),
@@ -323,15 +314,28 @@ export function SetupTab({ game, txs }: SetupTabProps) {
     }))
   }
 
-  const visualCounts = Array.from({ length: playerCount + 1 }, (_, count) => count)
-  const visualMin = clampBlueCount(draft.blueCountMin, playerCount)
-  const visualMax = clampBlueCount(draft.blueCountMax, playerCount)
-  const hasValidVisualRange = blueRangeError === null
-  const allowedBlueTotalsSummary = formatAllowedBlueTotals(
-    visualMin,
-    visualMax,
-    hasValidVisualRange,
-  )
+  function persistWithShiftedBlueRange(nextPlayers: Player[]): void {
+    const nextRange = shiftBlueRangeWithPlayerCount(
+      draft.blueCountMin,
+      draft.blueCountMax,
+      draft.players.length,
+      nextPlayers.length,
+    )
+    const nextBlueCountInputs = {
+      min: String(nextRange.min),
+      max: String(nextRange.max),
+    }
+
+    persist(
+      {
+        ...draft,
+        players: nextPlayers,
+        blueCountMin: nextRange.min,
+        blueCountMax: nextRange.max,
+      },
+      nextBlueCountInputs,
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -356,7 +360,9 @@ export function SetupTab({ game, txs }: SetupTabProps) {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="text-sm font-semibold text-slate-100">Blue count range</div>
-                <div className="mt-1 text-xs text-slate-400">{allowedBlueTotalsSummary}</div>
+                <div className="mt-1 text-xs text-slate-400">
+                  Shifts automatically when players are added or removed.
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-2 text-sm text-slate-300">
@@ -391,27 +397,8 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                 </label>
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2" aria-label="Allowed blue totals">
-              {visualCounts.map((count) => {
-                const isAllowed =
-                  hasValidVisualRange && count >= visualMin && count <= visualMax
-
-                return (
-                  <span
-                    key={count}
-                    className={`min-w-9 rounded-full px-3 py-1.5 text-center text-sm font-medium ${
-                      isAllowed
-                        ? 'bg-blue-500 text-white'
-                        : 'border border-slate-700 bg-slate-950 text-slate-400'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )
-              })}
-            </div>
             {blueRangeError === null ? null : (
-              <div className="mt-3 text-sm text-amber-300">{blueRangeError}</div>
+              <div className="mt-3 text-sm text-slate-300">{blueRangeError}</div>
             )}
           </div>
         </div>
@@ -429,19 +416,17 @@ export function SetupTab({ game, txs }: SetupTabProps) {
             type="button"
             className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={draft.players.length >= 16}
-            onClick={() =>
-              updateDraft((currentDraft) => ({
-                ...currentDraft,
-                players: [
-                  ...currentDraft.players,
-                  {
-                    id: crypto.randomUUID(),
-                    name: `Player ${currentDraft.players.length + 1}`,
-                    fixedColor: null,
-                  },
-                ],
-              }))
-            }
+            onClick={() => {
+              const nextPlayers = [
+                ...draft.players,
+                {
+                  id: crypto.randomUUID(),
+                  name: `Player ${draft.players.length + 1}`,
+                  fixedColor: null,
+                },
+              ]
+              persistWithShiftedBlueRange(nextPlayers)
+            }}
           >
             Add player
           </button>
@@ -489,14 +474,12 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                         ),
                       }))
                     }
-                    onRemove={() =>
-                      updateDraft((currentDraft) => ({
-                        ...currentDraft,
-                        players: currentDraft.players.filter(
-                          (_, currentIndex) => currentIndex !== index,
-                        ),
-                      }))
-                    }
+                    onRemove={() => {
+                      const nextPlayers = draft.players.filter(
+                        (_, currentIndex) => currentIndex !== index,
+                      )
+                      persistWithShiftedBlueRange(nextPlayers)
+                    }}
                   />
                 )
               })}
@@ -506,7 +489,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
       </section>
 
       {saveError === null ? null : (
-        <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-200">
           {saveError}
         </div>
       )}

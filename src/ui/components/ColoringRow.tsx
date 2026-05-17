@@ -4,7 +4,12 @@ import {
   formatColoringBits,
 } from '../../solver/solve'
 import type { Game, SolverResult, Transaction } from '../../solver/types'
-import { formatEquationSummary, formatSignedNumber, getNameInitials } from '../formatters'
+import {
+  formatConditionSummary,
+  formatEquationSummary,
+  formatSignedNumber,
+  getPlayerCellLabel,
+} from '../formatters'
 
 interface ColoringRowProps {
   game: Game
@@ -52,15 +57,15 @@ export function ColoringRow({
                 }`}
               >
                 <span className="text-xs font-bold">{index + 1}</span>
-                <span className="text-[9px] leading-none opacity-90">
-                  {getNameInitials(game.players[index]?.name ?? '')}
+                <span className="text-[8px] leading-none opacity-90">
+                  {getPlayerCellLabel(game.players[index]?.name ?? '')}
                 </span>
               </span>
             ))}
           </div>
           <div className="text-right">
             <div className="text-lg font-semibold text-slate-100">
-              Fitness {formatSignedNumber(result.fitness)}
+              {`Fitness = ${formatSignedNumber(result.fitness)}`}
             </div>
             {isTiedWithPrevious ? (
               <div className="text-xs text-slate-400">Tied with the previous one.</div>
@@ -86,6 +91,15 @@ export function ColoringRow({
                     {formatSignedNumber(contribution.contribution)}
                   </span>
                 </div>
+                {contribution.condition === undefined ? null : (
+                  <div className="mt-1 text-xs text-slate-400">
+                    {formatConditionSummary(
+                      game,
+                      contribution.condition.playerId,
+                      contribution.condition.color,
+                    )}
+                  </div>
+                )}
                 <div className="mt-1 text-xs text-slate-400">
                   {contribution.sourceKind === 'dyadic' ? 'Dyadic' : 'Conditional'} ·{' '}
                   {contribution.satisfied ? 'satisfied' : 'unsatisfied'}

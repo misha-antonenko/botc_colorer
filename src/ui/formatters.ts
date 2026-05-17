@@ -1,4 +1,4 @@
-import type { Game, PlayerId, Transaction } from '../solver/types'
+import type { Color, Game, PlayerId, Transaction } from '../solver/types'
 
 function trimTrailingZeros(value: number): string {
   if (Number.isInteger(value)) {
@@ -52,24 +52,14 @@ export function getPlayerSeatLabel(game: Game, playerId: PlayerId): string {
   return `${getPlayerName(game, playerId)} (#${playerRecord.index + 1})`
 }
 
-export function getNameInitials(name: string): string {
+export function getPlayerCellLabel(name: string): string {
   const trimmedName = name.trim()
 
   if (trimmedName === '') {
     return '?'
   }
 
-  const parts = trimmedName.split(/\s+/).filter(Boolean)
-
-  if (parts.length === 1) {
-    return parts[0][0]?.toUpperCase() ?? '?'
-  }
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0] ?? '')
-    .join('')
-    .toUpperCase()
+  return trimmedName.slice(0, 3)
 }
 
 export function formatEquationSummary(
@@ -80,6 +70,10 @@ export function formatEquationSummary(
 ): string {
   const relation = weight > 0 ? '=' : '≠'
   return `${getPlayerName(game, i)} ${relation} ${getPlayerName(game, j)}, w = ${formatMagnitude(weight)}`
+}
+
+export function formatConditionSummary(game: Game, playerId: PlayerId, color: Color): string {
+  return `if ${getPlayerName(game, playerId)} is ${color}`
 }
 
 export function summarizeTransaction(game: Game, transaction: Transaction): string {
@@ -94,9 +88,7 @@ export function summarizeTransaction(game: Game, transaction: Transaction): stri
     .map((equation) => formatEquationSummary(game, equation.i, equation.j, equation.weight))
     .join('; ')
 
-  return `if ${getPlayerName(game, transaction.condition.playerId)} ${
-    transaction.condition.color
-  }: ${equationSummary}`
+  return `${formatConditionSummary(game, transaction.condition.playerId, transaction.condition.color)}: ${equationSummary}`
 }
 
 export function formatTimestamp(timestamp: number): string {

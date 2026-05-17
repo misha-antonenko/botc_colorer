@@ -62,7 +62,8 @@ test('setup stays mobile-friendly', async ({ page }) => {
 
   const playerNameInput = page.getByLabel('Player 1 name')
   await expect(playerNameInput).toHaveCSS('font-size', '16px')
-  await expect(page.getByText('Allowed blue totals (inclusive): 0-5')).toBeVisible()
+  await expect(page.getByText('Shifts automatically when players are added or removed.')).toBeVisible()
+  await expect(page.getByText(/Allowed blue totals/i)).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Add player' }).click()
 

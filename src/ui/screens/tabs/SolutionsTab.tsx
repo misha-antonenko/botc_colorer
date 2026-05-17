@@ -21,7 +21,7 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
 
   if (status === 'error') {
     return (
-      <div className="rounded-3xl border border-red-400/40 bg-red-500/10 px-4 py-6 text-sm text-red-100">
+      <div className="rounded-3xl border border-slate-700 bg-slate-900/80 px-4 py-6 text-sm text-slate-200">
         {error ?? 'The solver failed to produce results.'}
       </div>
     )
