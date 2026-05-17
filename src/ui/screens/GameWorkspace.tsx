@@ -110,7 +110,7 @@ export function GameWorkspace() {
       </main>
 
       <div className="safe-bottom sticky bottom-0 z-20 border-t border-slate-800 bg-slate-950/95 px-4 py-3 text-xs text-slate-300 backdrop-blur">
-        {game.players.length} players · {enabledTransactionCount} enabled tx · top fitness{' '}
+        {game.players.length} players · {enabledTransactionCount} enabled txs · top fitness{' '}
         {topFitness === undefined ? '—' : formatSignedNumber(topFitness)} · last recompute{' '}
         {solver.status === 'solving' ? '…' : `${Math.round(solver.elapsedMs)} ms`}
       </div>
