@@ -52,7 +52,7 @@ function WeightEditor({ weight, onCommit }: WeightEditorProps) {
       <input
         autoFocus
         aria-label="Edit weight"
-        className="inline w-16 rounded border border-zinc-600 bg-zinc-800 px-1 py-0 text-sm text-zinc-100"
+        className="inline w-16 rounded border border-mist-600 bg-mist-800 px-1 py-0 text-sm text-mist-100"
         type="text"
         inputMode="decimal"
         value={draft}
@@ -72,7 +72,7 @@ function WeightEditor({ weight, onCommit }: WeightEditorProps) {
     <button
       type="button"
       title="Tap to edit weight"
-      className="rounded px-0.5 text-zinc-200 underline decoration-dotted underline-offset-2 hover:bg-zinc-700"
+      className="rounded px-0.5 text-mist-200 underline decoration-dotted underline-offset-2 hover:bg-mist-700"
       onClick={start}
     >
       {formatSignedNumber(weight)}
@@ -108,7 +108,7 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
       <textarea
         autoFocus
         aria-label="Edit note"
-        className="mt-1 w-full rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-1 text-xs leading-5 text-zinc-200"
+        className="mt-1 w-full rounded-lg border border-mist-600 bg-mist-800 px-2 py-1 text-xs leading-5 text-mist-200"
         rows={3}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -127,7 +127,7 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
         tabIndex={0}
         title="Tap to edit note"
         className={`mt-1 cursor-text whitespace-pre-wrap text-xs leading-5 ${
-          isEnabled ? 'text-zinc-400' : 'text-zinc-500 line-through'
+          isEnabled ? 'text-mist-400' : 'text-mist-500 line-through'
         }`}
         onClick={startEditing}
         onKeyDown={(e) => {
@@ -144,7 +144,7 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
       role="button"
       tabIndex={0}
       title="Add a note"
-      className="mt-1 cursor-text text-xs leading-5 text-zinc-600 hover:text-zinc-500"
+      className="mt-1 cursor-text text-xs leading-5 text-mist-600 hover:text-mist-500"
       onClick={startEditing}
       onKeyDown={(e) => {
         if (e.key === 'Enter') startEditing()
@@ -163,7 +163,7 @@ interface TransactionSummaryProps {
 }
 
 function TransactionSummary({ game, transaction, isEnabled, onWeightCommit }: TransactionSummaryProps) {
-  const textClass = isEnabled ? 'text-zinc-200' : 'line-through text-zinc-500'
+  const textClass = isEnabled ? 'text-mist-200' : 'line-through text-mist-500'
 
   if (transaction.kind === 'dyadic') {
     return (
@@ -268,9 +268,9 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
   return (
     <div className="space-y-4">
       {txs.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-zinc-700 bg-zinc-950/60 px-4 py-8 text-center text-zinc-300">
-          <div className="text-lg font-semibold text-zinc-100">No transactions yet</div>
-          <p className="mt-2 text-sm text-zinc-400">
+        <div className="rounded-3xl border border-dashed border-mist-700 bg-mist-950/60 px-4 py-8 text-center text-mist-300">
+          <div className="text-lg font-semibold text-mist-100">No transactions yet</div>
+          <p className="mt-2 text-sm text-mist-400">
             Add dyadic or conditional observations to populate the matrix and solutions tabs.
           </p>
         </div>
@@ -294,7 +294,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
               deleteLabel={`Delete ${summarizeTransaction(game, transaction)}`}
               onDelete={() => void handleDelete(transaction.id)}
             >
-              <article className="rounded-3xl border border-zinc-800 bg-zinc-950/80 px-3 py-3 shadow-lg shadow-zinc-950/30">
+              <article className="rounded-3xl border border-mist-800 bg-mist-950/80 px-3 py-3 shadow-lg shadow-mist-950/30">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <TransactionSummary
@@ -306,11 +306,11 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                     <NoteEditor transaction={transaction} isEnabled={isEnabled} />
                   </div>
 
-                  <label className="inline-flex shrink-0 items-center rounded-md border border-zinc-700 bg-zinc-900/80 p-1.5 text-xs text-zinc-300">
+                  <label className="inline-flex shrink-0 items-center rounded-md border border-mist-700 bg-mist-900/80 p-1.5 text-xs text-mist-300">
                     <input
                       aria-label="Enabled"
                       type="checkbox"
-                      className="h-5 w-5 accent-zinc-300"
+                      className="h-5 w-5 accent-mist-300"
                       checked={isEnabled}
                       onChange={(event) => {
                         const enabled = event.target.checked
@@ -349,12 +349,12 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
       )}
 
       {undoState === null ? null : (
-        <div className="fixed inset-x-4 bottom-24 z-30 rounded-2xl border border-zinc-700 bg-zinc-950/95 px-4 py-3 text-sm text-zinc-200 shadow-2xl shadow-zinc-950/60">
+        <div className="fixed inset-x-4 bottom-24 z-30 rounded-2xl border border-mist-700 bg-mist-950/95 px-4 py-3 text-sm text-mist-200 shadow-2xl shadow-mist-950/60">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>Transaction deleted. Undo is available for 5 seconds.</span>
             <button
               type="button"
-              className="rounded-full bg-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-950"
+              className="rounded-full bg-mist-200 px-4 py-2 text-sm font-semibold text-mist-950"
               onClick={() => void handleUndo()}
             >
               Undo
@@ -364,14 +364,14 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
       )}
 
       {error === null ? null : (
-        <div className="rounded-2xl border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200">
+        <div className="rounded-2xl border border-mist-700 bg-mist-900/80 px-4 py-3 text-sm text-mist-200">
           {error}
         </div>
       )}
 
       <Link
         aria-label="Add transaction"
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-3xl font-semibold text-zinc-950 shadow-2xl shadow-zinc-950/50"
+        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-mist-200 text-3xl font-semibold text-mist-950 shadow-2xl shadow-mist-950/50"
         to={`/g/${game.id}/tx/new`}
       >
         +

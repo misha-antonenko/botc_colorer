@@ -122,7 +122,7 @@ function SortablePlayerCard({
       ? 'border-blue-300/50 bg-blue-500 text-white'
       : player.fixedColor === 'red'
         ? 'border-red-300/50 bg-red-500 text-white'
-        : 'border-zinc-700 bg-zinc-950 text-zinc-200'
+        : 'border-mist-700 bg-mist-950 text-mist-200'
 
   return (
     <SwipeActionRow
@@ -132,8 +132,8 @@ function SortablePlayerCard({
     >
       <div
         ref={setNodeRef}
-        className={`w-full min-w-0 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-2.5 ${
-          isDragging ? 'shadow-2xl shadow-zinc-950/60 ring-1 ring-zinc-400/30' : ''
+        className={`w-full min-w-0 rounded-2xl border border-mist-800 bg-mist-900/70 p-2.5 ${
+          isDragging ? 'shadow-2xl shadow-mist-950/60 ring-1 ring-mist-400/30' : ''
         }`}
         style={{
           transform: CSS.Transform.toString(transform),
@@ -143,10 +143,10 @@ function SortablePlayerCard({
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
           <div
             aria-label={`Seat ${index + 1}`}
-            className="flex h-10 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950 text-[10px] leading-tight text-zinc-400"
+            className="flex h-10 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-mist-700 bg-mist-950 text-[10px] leading-tight text-mist-400"
           >
             <span className="uppercase tracking-wide">Seat</span>
-            <span className="text-sm font-semibold text-zinc-200">{index + 1}</span>
+            <span className="text-sm font-semibold text-mist-200">{index + 1}</span>
           </div>
 
           <div className="flex min-w-0 items-center gap-2">
@@ -163,7 +163,7 @@ function SortablePlayerCard({
             <div className="min-w-0 flex-1">
               <input
                 aria-label={`Player ${index + 1} name`}
-                className="min-w-0 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-base text-zinc-100"
+                className="min-w-0 w-full rounded-xl border border-mist-700 bg-mist-950 px-3 py-2 text-base text-mist-100"
                 value={player.name}
                 onChange={(event) => onNameChange(event.target.value)}
               />
@@ -174,7 +174,7 @@ function SortablePlayerCard({
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`Drag seat ${index + 1}`}
-            className="touch-none self-stretch rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-200"
+            className="touch-none self-stretch rounded-xl border border-mist-700 bg-mist-950 px-3 text-base text-mist-200"
             {...attributes}
             {...listeners}
           >
@@ -339,13 +339,13 @@ export function SetupTab({ game, txs }: SetupTabProps) {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-lg shadow-zinc-950/30">
+      <section className="rounded-3xl border border-mist-800 bg-mist-950/80 p-4 shadow-lg shadow-mist-950/30">
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <label className="flex flex-col gap-2 text-sm text-zinc-300">
+          <label className="flex flex-col gap-2 text-sm text-mist-300">
             <span>Game name</span>
             <input
               aria-label="Game name"
-              className="rounded-2xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
+              className="rounded-2xl border border-mist-700 bg-mist-900 px-3 py-2 text-base text-mist-100"
               value={draft.name}
               onChange={(event) =>
                 updateDraft((currentDraft) => ({
@@ -356,20 +356,20 @@ export function SetupTab({ game, txs }: SetupTabProps) {
             />
           </label>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4">
+          <div className="rounded-2xl border border-mist-800 bg-mist-900/70 p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div className="text-sm font-semibold text-zinc-100">Blue count range</div>
-                <div className="mt-1 text-xs text-zinc-400">
+                <div className="text-sm font-semibold text-mist-100">Blue count range</div>
+                <div className="mt-1 text-xs text-mist-400">
                   Shifts automatically when players are added or removed.
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-zinc-300">
+                <label className="flex items-center gap-2 text-sm text-mist-300">
                   <span>Min</span>
                   <input
                     aria-label="Blue count minimum"
-                    className="w-16 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-center text-base text-zinc-100"
+                    className="w-16 rounded-xl border border-mist-700 bg-mist-950 px-3 py-2 text-center text-base text-mist-100"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -380,11 +380,11 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                     }
                   />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-zinc-300">
+                <label className="flex items-center gap-2 text-sm text-mist-300">
                   <span>Max</span>
                   <input
                     aria-label="Blue count maximum"
-                    className="w-16 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-center text-base text-zinc-100"
+                    className="w-16 rounded-xl border border-mist-700 bg-mist-950 px-3 py-2 text-center text-base text-mist-100"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -398,20 +398,20 @@ export function SetupTab({ game, txs }: SetupTabProps) {
               </div>
             </div>
             {blueRangeError === null ? null : (
-              <div className="mt-3 text-sm text-zinc-300">{blueRangeError}</div>
+              <div className="mt-3 text-sm text-mist-300">{blueRangeError}</div>
             )}
           </div>
         </div>
       </section>
 
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-lg shadow-zinc-950/30">
+      <section className="rounded-3xl border border-mist-800 bg-mist-950/80 p-4 shadow-lg shadow-mist-950/30">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">Players</h2>
+            <h2 className="text-lg font-semibold text-mist-100">Players</h2>
           </div>
           <button
             type="button"
-            className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full border border-mist-700 px-4 py-2 text-sm text-mist-200 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={draft.players.length >= 16}
             onClick={() => {
               const nextPlayers = [
@@ -486,7 +486,7 @@ export function SetupTab({ game, txs }: SetupTabProps) {
       </section>
 
       {saveError === null ? null : (
-        <div className="rounded-2xl border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200">
+        <div className="rounded-2xl border border-mist-700 bg-mist-900/80 px-4 py-3 text-sm text-mist-200">
           {saveError}
         </div>
       )}

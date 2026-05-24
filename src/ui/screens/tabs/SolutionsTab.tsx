@@ -21,7 +21,7 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
 
   if (status === 'error') {
     return (
-      <div className="rounded-3xl border border-zinc-700 bg-zinc-900/80 px-4 py-6 text-sm text-zinc-200">
+      <div className="rounded-3xl border border-mist-700 bg-mist-900/80 px-4 py-6 text-sm text-mist-200">
         {error ?? 'The solver failed to produce results.'}
       </div>
     )
@@ -29,19 +29,19 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
 
   return (
     <div className="space-y-4">
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-lg shadow-zinc-950/30">
+      <section className="rounded-3xl border border-mist-800 bg-mist-950/80 p-4 shadow-lg shadow-mist-950/30">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">Solutions</h2>
-            <p className="text-sm text-zinc-400">
+            <h2 className="text-lg font-semibold text-mist-100">Solutions</h2>
+            <p className="text-sm text-mist-400">
               Ranked by fitness, then lexicographically.
             </p>
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-mist-300">
             <span>Display cap</span>
             <select
               aria-label="Display cap"
-              className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100"
+              className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 text-base text-mist-100"
               value={solutionCap}
               onChange={(event) =>
                 setSolutionCap(game.id, Number(event.target.value) as (typeof SOLUTION_CAPS)[number])
@@ -58,9 +58,9 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
       </section>
 
       {results.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-zinc-700 bg-zinc-950/60 px-4 py-8 text-center text-zinc-300">
-          <div className="text-lg font-semibold text-zinc-100">No valid colorings</div>
-          <p className="mt-2 text-sm text-zinc-400">
+        <div className="rounded-3xl border border-dashed border-mist-700 bg-mist-950/60 px-4 py-8 text-center text-mist-300">
+          <div className="text-lg font-semibold text-mist-100">No valid colorings</div>
+          <p className="mt-2 text-sm text-mist-400">
             The current blue range and fixed-color constraints exclude every possible assignment.
           </p>
         </div>

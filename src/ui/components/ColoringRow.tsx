@@ -40,7 +40,7 @@ export function ColoringRow({
   const txMap = useMemo(() => new Map(txs.map((tx) => [tx.id, tx])), [txs])
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-lg shadow-zinc-950/30">
+    <div className="rounded-2xl border border-mist-800 bg-mist-900/70 shadow-lg shadow-mist-950/30">
       <button
         type="button"
         className="flex w-full flex-col gap-3 px-4 py-4 text-left"
@@ -66,34 +66,34 @@ export function ColoringRow({
             ))}
           </div>
           <div className="self-start sm:text-right">
-            <div className="text-lg font-semibold text-zinc-100">
+            <div className="text-lg font-semibold text-mist-100">
               {`Fitness = ${formatSignedNumber(result.fitness)}`}
             </div>
             {isTiedWithPrevious ? (
-              <div className="text-xs text-zinc-400">Tied with the previous one.</div>
+              <div className="text-xs text-mist-400">Tied with the previous one.</div>
             ) : null}
           </div>
         </div>
       </button>
 
       {expanded ? (
-        <div className="border-t border-zinc-800 px-4 py-4">
-          <div className="mb-3 text-sm font-semibold text-zinc-100">Equation breakdown</div>
+        <div className="border-t border-mist-800 px-4 py-4">
+          <div className="mb-3 text-sm font-semibold text-mist-100">Equation breakdown</div>
           <div className="space-y-2">
             {contributions.map((contribution) => (
               <div
                 key={contribution.id}
-                className="rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-200"
+                className="rounded-xl border border-mist-800 bg-mist-950/80 px-3 py-2 text-sm text-mist-200"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span>
                     {formatEquationSummary(game, contribution.i, contribution.j, contribution.weight)}
                   </span>
-                  <span className="font-mono text-zinc-300">
+                  <span className="font-mono text-mist-300">
                     {formatSignedNumber(contribution.contribution)}
                   </span>
                 </div>
-                <div className="mt-1 text-xs text-zinc-400">
+                <div className="mt-1 text-xs text-mist-400">
                   {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
                   {contribution.condition === undefined ? null : ' · ' + formatConditionSummary(
                     game,
@@ -103,7 +103,7 @@ export function ColoringRow({
                   {(() => {
                     const note = txMap.get(contribution.sourceTxId)?.note
                     return note === undefined ? null : (
-                      <span className="block mt-0.5 italic text-zinc-500">{note}</span>
+                      <span className="block mt-0.5 italic text-mist-500">{note}</span>
                     )
                   })()}
                 </div>
