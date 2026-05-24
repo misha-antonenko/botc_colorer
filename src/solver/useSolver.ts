@@ -34,7 +34,7 @@ export function useSolver(
 
     return JSON.stringify({
       updatedAt: game.updatedAt,
-      players: game.players.map((player) => [player.id, player.fixedColor]),
+      players: game.players.map((player) => player.id),
       blueRange: [game.blueCountMin, game.blueCountMax],
       txs: txs.map((tx) => [tx.id, tx.enabled]),
     })

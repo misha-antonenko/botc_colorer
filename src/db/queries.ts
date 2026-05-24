@@ -8,7 +8,6 @@ function createDefaultPlayer(index: number): Player {
   return {
     id: crypto.randomUUID(),
     name: `Player ${index + 1}`,
-    fixedColor: null,
   }
 }
 
@@ -125,7 +124,6 @@ export async function duplicateGame(gameId: GameId): Promise<Game> {
     players: sourceGame.players.map((player) => ({
       ...player,
       id: crypto.randomUUID(),
-      fixedColor: null,
     })),
   }
 

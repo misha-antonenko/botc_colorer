@@ -8,7 +8,6 @@ export type WorkspaceTab = 'setup' | 'state' | 'transactions' | 'solutions'
 export interface Player {
   id: PlayerId
   name: string
-  fixedColor: Color | null
 }
 
 export interface Game {

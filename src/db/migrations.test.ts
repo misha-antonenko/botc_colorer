@@ -265,6 +265,6 @@ describe('full import pipeline with v1 payload', () => {
       color: 'blue',
     })
     // fixedColor cleared on players
-    expect(parsed.games[0]!.players[0]!.fixedColor).toBeNull()
+    expect(parsed.games[0]!.players[0]!).not.toHaveProperty('fixedColor')
   })
 })

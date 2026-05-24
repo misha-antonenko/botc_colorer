@@ -4,7 +4,6 @@ export function createPlayers(names: string[]): Player[] {
   return names.map((name, index) => ({
     id: `p${index + 1}`,
     name,
-    fixedColor: null,
   }))
 }
 

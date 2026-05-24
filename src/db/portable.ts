@@ -12,7 +12,6 @@ const nonZeroNumber = z.number().finite().refine((value) => value !== 0, {
 const playerSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  fixedColor: colorSchema.nullable(),
 })
 
 const gameSchema = z.object({

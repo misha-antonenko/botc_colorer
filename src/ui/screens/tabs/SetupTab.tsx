@@ -388,7 +388,6 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                 {
                   id: crypto.randomUUID(),
                   name: `Player ${draft.players.length + 1}`,
-                  fixedColor: null,
                 },
               ]
               persistWithShiftedBlueRange(nextPlayers)
