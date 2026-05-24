@@ -13,7 +13,7 @@ const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH / 3
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
-    target.closest('button, input, label, a, select, textarea') !== null
+    target.closest('button, input, label, a, select, textarea, [role="button"]') !== null
   )
 }
 
