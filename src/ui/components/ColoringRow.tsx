@@ -9,6 +9,7 @@ import {
   formatEquationSummary,
   formatSignedNumber,
   getPlayerCellLabel,
+  getPlayerName,
 } from '../formatters'
 
 
@@ -85,28 +86,50 @@ export function ColoringRow({
                 key={contribution.id}
                 className="rounded-xl border border-mist-800 bg-mist-950/80 px-3 py-2 text-sm text-mist-200"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span>
-                    {formatEquationSummary(game, contribution.i, contribution.j, contribution.weight)}
-                  </span>
-                  <span className="font-mono text-mist-300">
-                    {formatSignedNumber(contribution.contribution)}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-mist-400">
-                  {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
-                  {contribution.condition === undefined ? null : ' · ' + formatConditionSummary(
-                    game,
-                    contribution.condition.playerId,
-                    contribution.condition.color,
-                  )}
-                  {(() => {
-                    const note = txMap.get(contribution.sourceTxId)?.note
-                    return note === undefined ? null : (
-                      <span className="block mt-0.5 italic text-mist-500">{note}</span>
-                    )
-                  })()}
-                </div>
+                {contribution.sourceKind === 'color' ? (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        {getPlayerName(game, contribution.i)} is {contribution.fixedColor}
+                      </span>
+                      <span className="text-xs text-mist-400">hard constraint</span>
+                    </div>
+                    <div className="mt-1 text-xs text-mist-400">
+                      {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
+                      {(() => {
+                        const note = txMap.get(contribution.sourceTxId)?.note
+                        return note === undefined ? null : (
+                          <span className="block mt-0.5 italic text-mist-500">{note}</span>
+                        )
+                      })()}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        {formatEquationSummary(game, contribution.i, contribution.j, contribution.weight)}
+                      </span>
+                      <span className="font-mono text-mist-300">
+                        {formatSignedNumber(contribution.contribution)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-mist-400">
+                      {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
+                      {contribution.condition === undefined ? null : ' · ' + formatConditionSummary(
+                        game,
+                        contribution.condition.playerId,
+                        contribution.condition.color,
+                      )}
+                      {(() => {
+                        const note = txMap.get(contribution.sourceTxId)?.note
+                        return note === undefined ? null : (
+                          <span className="block mt-0.5 italic text-mist-500">{note}</span>
+                        )
+                      })()}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

@@ -226,6 +226,54 @@ describe('solveGame', () => {
   })
 })
 
+describe('buildColoringContributionBreakdown (color kind)', () => {
+  it('emits a satisfied hard-constraint entry when the coloring matches the fixed color', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const colorTx = createColorTxFixture({
+      id: 'tx-color',
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'blue',
+    })
+
+    // coloring 1 = Alice blue, Bob red
+    const breakdown = buildColoringContributionBreakdown(game, [colorTx], 1)
+
+    expect(breakdown).toEqual([
+      expect.objectContaining({
+        sourceKind: 'color',
+        i: players[0].id,
+        fixedColor: 'blue',
+        contribution: 0,
+        satisfied: true,
+      }),
+    ])
+  })
+
+  it('emits an unsatisfied entry when the coloring violates the fixed color', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const colorTx = createColorTxFixture({
+      id: 'tx-color',
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'red',
+    })
+
+    // coloring 1 = Alice blue — violates the red constraint
+    const breakdown = buildColoringContributionBreakdown(game, [colorTx], 1)
+
+    expect(breakdown).toEqual([
+      expect.objectContaining({
+        sourceKind: 'color',
+        satisfied: false,
+        contribution: 0,
+      }),
+    ])
+  })
+})
+
 describe('buildColoringContributionBreakdown', () => {
   it('marks negative dyadic equations satisfied only when colors differ', () => {
     const players = createPlayers(['Alice', 'Bob'])

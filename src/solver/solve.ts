@@ -288,6 +288,26 @@ export function buildColoringContributionBreakdown(
     }
 
     if (tx.kind === 'color') {
+      const index = positions.get(tx.playerId)
+
+      if (index !== undefined) {
+        const actualColor = isBlueAt(coloring, index) ? 'blue' : 'red'
+        const satisfied = actualColor === tx.color
+
+        contributions.push({
+          id: `${tx.id}:color`,
+          sourceTxId: tx.id,
+          sourceKind: 'color',
+          i: tx.playerId,
+          j: tx.playerId,
+          fixedColor: tx.color,
+          weight: 0,
+          satisfied,
+          contribution: 0,
+          active: true,
+        })
+      }
+
       continue
     }
 

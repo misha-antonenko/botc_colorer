@@ -86,6 +86,8 @@ export interface ColoringContribution {
     playerId: PlayerId
     color: Color
   }
+  /** Set for color-constraint contributions; absent for equation contributions. */
+  fixedColor?: Color
   weight: number
   satisfied: boolean
   contribution: number
