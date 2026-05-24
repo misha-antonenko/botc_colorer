@@ -1,4 +1,5 @@
 import type { Game, GameId, PortablePayload, Transaction } from '../solver/types'
+import { applyMigrations } from './migrations'
 import { db, decodeGameRow, decodeTransactionRow } from './schema'
 
 const BACKUP_SLOT_COUNT = 3
@@ -69,10 +70,13 @@ export function getLatestGameSnapshot(gameId: GameId): GameSnapshot | null {
 }
 
 export function snapshotToPortablePayload(snapshot: GameSnapshot): PortablePayload {
-  return {
+  // Snapshot data is v1-shaped (players may carry fixedColor). Apply migrations
+  // so the returned payload is always at the current portable version.
+  const raw = {
     version: 1,
     exportedAt: snapshot.savedAt,
     games: [snapshot.game],
     transactions: snapshot.transactions,
   }
+  return applyMigrations(raw) as PortablePayload
 }

@@ -94,8 +94,9 @@ export interface ColoringContribution {
   active: boolean
 }
 
+/** Must match CURRENT_VERSION in src/db/migrations.ts. */
 export interface PortablePayload {
-  version: 1
+  version: 2
   exportedAt: number
   games: Game[]
   transactions: Transaction[]

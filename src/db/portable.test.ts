@@ -73,7 +73,7 @@ describe('portable payloads', () => {
 
     await shareOrDownloadPortablePayload(
       {
-        version: 1,
+        version: 2,
         exportedAt: 123,
         games: [],
         transactions: [],

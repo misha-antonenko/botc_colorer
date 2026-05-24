@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Game, PortableImportResult, PortablePayload, Transaction } from '../solver/types'
 import { snapshotGameState } from './backup'
+import { CURRENT_VERSION, applyMigrations } from './migrations'
 import { db, decodeGameRow, decodeTransactionRow, encodeGameRow, encodeTransactionRow } from './schema'
 
 const colorSchema = z.enum(['blue', 'red'])
@@ -63,7 +64,7 @@ const colorTxSchema = baseTxSchema.extend({
 const transactionSchema = z.discriminatedUnion('kind', [dyadicSchema, colorTxSchema, conditionalSchema])
 
 const portablePayloadSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(CURRENT_VERSION),
   exportedAt: z.number().finite(),
   games: z.array(gameSchema),
   transactions: z.array(transactionSchema),
@@ -142,7 +143,8 @@ function sanitizeFileName(name: string): string {
 }
 
 export function parsePortablePayload(raw: unknown): PortablePayload {
-  const payload = portablePayloadSchema.parse(raw) as PortablePayload
+  const migrated = applyMigrations(raw)
+  const payload = portablePayloadSchema.parse(migrated) as PortablePayload
   assertPortableRelationships(payload)
   return payload
 }
@@ -163,7 +165,7 @@ export function createPortablePayload(
     )
 
   return {
-    version: 1,
+    version: CURRENT_VERSION,
     exportedAt,
     games: normalizedGames,
     transactions: normalizedTransactions,
