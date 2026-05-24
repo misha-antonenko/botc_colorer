@@ -9,12 +9,17 @@
  * IndexedDB: the Dexie schema upgrade in schema.ts calls
  * buildColorTxesFromPlayers() directly, sharing the same core logic.
  *
- * To add a future migration:
- *   1. Bump CURRENT_VERSION.
- *   2. Add the typed raw shapes for the old version.
- *   3. Write a migrateVNtoVM() function using any shared helpers needed.
- *   4. Append { from: N, apply: migrateVNtoVM } to MIGRATIONS.
- *   5. Add the corresponding Dexie version(M).upgrade() call in schema.ts.
+ * To add a future migration (N → M):
+ *   1. Bump CURRENT_VERSION to M.
+ *   2. Update PortablePayload.version in types.ts to match.
+ *   3. Add typed raw shapes for the v-N data (only fields the migration reads).
+ *   4. Extract any non-trivial conversion into a named, exported helper so the
+ *      Dexie upgrade can call the same function (no logic duplication).
+ *   5. Write migrateVNtoVM() and append { from: N, apply: migrateVNtoVM }
+ *      to MIGRATIONS.
+ *   6. Add this.version(M).upgrade(...) in schema.ts calling the shared helper.
+ *   7. Add tests: unit-test the shared helper, integration-test the Dexie
+ *      upgrade in schema.test.ts using an isolated IDBFactory.
  */
 
 import type { ColorTx } from '../solver/types'
