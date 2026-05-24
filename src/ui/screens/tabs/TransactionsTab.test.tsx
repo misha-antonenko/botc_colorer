@@ -23,6 +23,8 @@ describe('TransactionsTab', () => {
     )
 
     expect(screen.getByText('Clockmaker info')).toBeInTheDocument()
-    expect(screen.getByText('Alice → Bob, w = +2')).toBeInTheDocument()
+    // Summary is split across elements: static text + a weight button
+    expect(screen.getByText(/Alice → Bob, w =/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '+2' })).toBeInTheDocument()
   })
 })

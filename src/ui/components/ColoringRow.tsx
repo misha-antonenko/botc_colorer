@@ -11,6 +11,7 @@ import {
   getPlayerCellLabel,
 } from '../formatters'
 
+
 interface ColoringRowProps {
   game: Game
   txs: Transaction[]
@@ -36,6 +37,7 @@ export function ColoringRow({
     () => (expanded ? buildColoringContributionBreakdown(game, txs, result.c) : []),
     [expanded, game, result.c, txs],
   )
+  const txMap = useMemo(() => new Map(txs.map((tx) => [tx.id, tx])), [txs])
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-lg shadow-zinc-950/30">
@@ -98,6 +100,12 @@ export function ColoringRow({
                     contribution.condition.playerId,
                     contribution.condition.color,
                   )}
+                  {(() => {
+                    const note = txMap.get(contribution.sourceTxId)?.note
+                    return note === undefined ? null : (
+                      <span className="block mt-0.5 italic text-zinc-500">{note}</span>
+                    )
+                  })()}
                 </div>
               </div>
             ))}
