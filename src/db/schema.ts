@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { ColorTx, ConditionalTx, DyadicTx, Game, Transaction } from '../solver/types'
+import { buildColorTxesFromPlayers, type V1Player } from './migrations'
 
 export interface GameRow {
   id: string
@@ -20,16 +21,34 @@ export interface TransactionRow {
   payloadJSON: string
 }
 
-class BotcDatabase extends Dexie {
+export class BotcDatabase extends Dexie {
   games!: EntityTable<GameRow, 'id'>
   transactions!: EntityTable<TransactionRow, 'id'>
 
-  constructor() {
-    super('botc-coloring')
+  constructor(options?: ConstructorParameters<typeof Dexie>[1]) {
+    super('botc-coloring', options)
 
     this.version(1).stores({
       games: 'id, updatedAt, createdAt',
       transactions: 'id, gameId, createdAt, kind, enabled',
+    })
+
+    this.version(2).upgrade(async (trans) => {
+      const gameRows = await trans.table('games').toArray() as GameRow[]
+
+      for (const gameRow of gameRows) {
+        const players = JSON.parse(gameRow.playersJSON) as V1Player[]
+        const colorTxes = buildColorTxesFromPlayers(gameRow.id, gameRow.updatedAt, players)
+
+        if (colorTxes.length === 0) {
+          continue
+        }
+
+        await trans.table('transactions').bulkAdd(colorTxes.map(encodeTransactionRow))
+
+        const nulledPlayers = players.map((player) => ({ ...player, fixedColor: null }))
+        await trans.table('games').update(gameRow.id, { playersJSON: JSON.stringify(nulledPlayers) })
+      }
     })
   }
 }

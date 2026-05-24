@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CURRENT_VERSION, applyMigrations } from './migrations'
+import { CURRENT_VERSION, applyMigrations, buildColorTxesFromPlayers } from './migrations'
 
 describe('applyMigrations', () => {
   it('passes through a current-version payload unchanged', () => {
@@ -24,6 +24,36 @@ describe('applyMigrations', () => {
     // rather than throwing, so users get a schema parse error with context.
     const payload = { version: 999, exportedAt: 1, games: [], transactions: [] }
     expect(applyMigrations(payload)).toEqual(payload)
+  })
+})
+
+describe('buildColorTxesFromPlayers (shared migration core)', () => {
+  it('returns an empty array when no player has a fixedColor', () => {
+    const result = buildColorTxesFromPlayers('g1', 500, [
+      { id: 'p1', fixedColor: null },
+      { id: 'p2', fixedColor: null },
+    ])
+    expect(result).toHaveLength(0)
+  })
+
+  it('creates one ColorTx per player with a fixedColor', () => {
+    const result = buildColorTxesFromPlayers('g1', 500, [
+      { id: 'p1', fixedColor: 'blue' },
+      { id: 'p2', fixedColor: 'red' },
+      { id: 'p3', fixedColor: null },
+    ])
+    expect(result).toHaveLength(2)
+    expect(result[0]).toMatchObject({ kind: 'color', gameId: 'g1', createdAt: 500, enabled: true, playerId: 'p1', color: 'blue' })
+    expect(result[1]).toMatchObject({ kind: 'color', gameId: 'g1', createdAt: 500, enabled: true, playerId: 'p2', color: 'red' })
+  })
+
+  it('assigns each transaction a unique id', () => {
+    const result = buildColorTxesFromPlayers('g1', 500, [
+      { id: 'p1', fixedColor: 'blue' },
+      { id: 'p2', fixedColor: 'blue' },
+    ])
+    expect(result[0]!.id).not.toBe(result[1]!.id)
+    expect(typeof result[0]!.id).toBe('string')
   })
 })
 

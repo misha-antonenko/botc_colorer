@@ -1,10 +1,23 @@
 /**
- * Portable payload migration system.
+ * Migration system for both the portable payload format and the IndexedDB
+ * schema. All migration logic lives here so each version transition has a
+ * single implementation.
  *
- * Each entry in MIGRATIONS transforms a raw payload from one version to the
- * next. applyMigrations walks the chain from the detected version to
- * CURRENT_VERSION. To add a future migration, append a new entry.
+ * Portable payload: applyMigrations() walks the chain from the detected
+ * version to CURRENT_VERSION before Zod parsing.
+ *
+ * IndexedDB: the Dexie schema upgrade in schema.ts calls
+ * buildColorTxesFromPlayers() directly, sharing the same core logic.
+ *
+ * To add a future migration:
+ *   1. Bump CURRENT_VERSION.
+ *   2. Add the typed raw shapes for the old version.
+ *   3. Write a migrateVNtoVM() function using any shared helpers needed.
+ *   4. Append { from: N, apply: migrateVNtoVM } to MIGRATIONS.
+ *   5. Add the corresponding Dexie version(M).upgrade() call in schema.ts.
  */
+
+import type { ColorTx } from '../solver/types'
 
 export const CURRENT_VERSION = 2
 
@@ -13,9 +26,9 @@ interface MigrationStep {
   apply: (raw: Record<string, unknown>) => Record<string, unknown>
 }
 
-// ── v1 raw shapes (only the fields the migration needs) ───────────────────────
+// ── v1 raw shapes (only the fields each migration needs) ──────────────────────
 
-interface V1Player {
+export interface V1Player {
   id: string
   fixedColor: 'blue' | 'red' | null
 }
@@ -33,6 +46,33 @@ interface V1Payload {
   transactions: Record<string, unknown>[]
 }
 
+// ── Shared migration helpers ──────────────────────────────────────────────────
+
+/**
+ * Converts each player with a non-null fixedColor into a ColorTx. Used by
+ * both the portable-payload migration and the IndexedDB schema upgrade so the
+ * logic is defined exactly once.
+ */
+export function buildColorTxesFromPlayers(
+  gameId: string,
+  updatedAt: number,
+  players: ReadonlyArray<V1Player>,
+): ColorTx[] {
+  return players
+    .filter((player): player is V1Player & { fixedColor: 'blue' | 'red' } =>
+      player.fixedColor !== null,
+    )
+    .map((player) => ({
+      id: crypto.randomUUID(),
+      kind: 'color' as const,
+      gameId,
+      createdAt: updatedAt,
+      enabled: true,
+      playerId: player.id,
+      color: player.fixedColor,
+    }))
+}
+
 // ── Migrations ────────────────────────────────────────────────────────────────
 
 function migrateV1ToV2(raw: Record<string, unknown>): Record<string, unknown> {
@@ -40,22 +80,10 @@ function migrateV1ToV2(raw: Record<string, unknown>): Record<string, unknown> {
   const addedTransactions: Record<string, unknown>[] = []
 
   const migratedGames = payload.games.map((game) => {
-    const migratedPlayers = game.players.map((player) => {
-      if (player.fixedColor !== null) {
-        addedTransactions.push({
-          id: crypto.randomUUID(),
-          kind: 'color',
-          gameId: game.id,
-          createdAt: game.updatedAt,
-          enabled: true,
-          playerId: player.id,
-          color: player.fixedColor,
-        })
-      }
+    const colorTxes = buildColorTxesFromPlayers(game.id, game.updatedAt, game.players)
+    addedTransactions.push(...(colorTxes as unknown as Record<string, unknown>[]))
 
-      return { ...player, fixedColor: null }
-    })
-
+    const migratedPlayers = game.players.map((player) => ({ ...player, fixedColor: null }))
     return { ...game, players: migratedPlayers }
   })
 
