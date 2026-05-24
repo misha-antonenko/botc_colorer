@@ -4,9 +4,10 @@ import { db, decodeGameRow, decodeTransactionRow } from './schema'
 
 const BACKUP_SLOT_COUNT = 3
 const BACKUP_PREFIX = 'botc:backup'
+const SNAPSHOT_VERSION = 1
 
 export interface GameSnapshot {
-  version: 1
+  version: typeof SNAPSHOT_VERSION
   savedAt: number
   game: Game
   transactions: Transaction[]
@@ -29,7 +30,7 @@ export async function snapshotGameState(gameId: GameId): Promise<void> {
 
   const transactionRows = await db.transactions.where('gameId').equals(gameId).sortBy('createdAt')
   const snapshot: GameSnapshot = {
-    version: 1,
+    version: SNAPSHOT_VERSION,
     savedAt: Date.now(),
     game: decodeGameRow(gameRow),
     transactions: transactionRows.map(decodeTransactionRow),
@@ -54,7 +55,7 @@ export function listGameSnapshots(gameId: GameId): GameSnapshot[] {
     try {
       const parsedSnapshot = JSON.parse(rawSnapshot) as GameSnapshot
 
-      if (parsedSnapshot.version === 1 && parsedSnapshot.game.id === gameId) {
+      if (parsedSnapshot.version === SNAPSHOT_VERSION && parsedSnapshot.game.id === gameId) {
         snapshots.push(parsedSnapshot)
       }
     } catch {
@@ -73,7 +74,7 @@ export function snapshotToPortablePayload(snapshot: GameSnapshot): PortablePaylo
   // Snapshot data is v1-shaped (players may carry fixedColor). Apply migrations
   // so the returned payload is always at the current portable version.
   const raw = {
-    version: 1,
+    version: SNAPSHOT_VERSION,
     exportedAt: snapshot.savedAt,
     games: [snapshot.game],
     transactions: snapshot.transactions,
