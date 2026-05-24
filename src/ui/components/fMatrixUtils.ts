@@ -97,6 +97,10 @@ export function buildStateMatrixData(game: Game, txs: Transaction[]): StateMatri
       continue
     }
 
+    if (transaction.kind === 'color') {
+      continue
+    }
+
     for (const equation of transaction.equations) {
       const i = getPosition(positions, equation.i)
       const j = getPosition(positions, equation.j)

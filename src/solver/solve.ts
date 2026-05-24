@@ -287,6 +287,10 @@ export function buildColoringContributionBreakdown(
       continue
     }
 
+    if (tx.kind === 'color') {
+      continue
+    }
+
     const conditionIndex = getPlayerIndex(positions, tx.condition.playerId)
     const want = tx.condition.color === 'blue' ? 1 : 0
 
