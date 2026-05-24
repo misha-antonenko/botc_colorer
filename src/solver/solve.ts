@@ -1,6 +1,7 @@
 import type {
   ColoringContribution,
   Color,
+  ColorTx,
   ConditionalTx,
   Game,
   PlayerId,
@@ -146,14 +147,39 @@ function buildPreparedConditionals(game: Game, txs: Transaction[]): PreparedCond
     }))
 }
 
-function buildFixedColorMasks(game: Game): { mustBeBlue: number; mustBeRed: number } {
+function buildFixedColorMasks(
+  game: Game,
+  txs: Transaction[],
+): { mustBeBlue: number; mustBeRed: number } {
+  const positions = buildPositionMap(game)
+  // Latest enabled ColorTx per player wins.
+  const latestColorTx = new Map<PlayerId, ColorTx>()
+
+  for (const tx of txs) {
+    if (!tx.enabled || tx.kind !== 'color') {
+      continue
+    }
+
+    const existing = latestColorTx.get(tx.playerId)
+
+    if (existing === undefined || tx.createdAt > existing.createdAt) {
+      latestColorTx.set(tx.playerId, tx)
+    }
+  }
+
   let mustBeBlue = 0
   let mustBeRed = 0
 
-  for (const [index, player] of game.players.entries()) {
-    if (player.fixedColor === 'blue') {
+  for (const [playerId, tx] of latestColorTx) {
+    const index = positions.get(playerId)
+
+    if (index === undefined) {
+      continue
+    }
+
+    if (tx.color === 'blue') {
       mustBeBlue |= 1 << index
-    } else if (player.fixedColor === 'red') {
+    } else {
       mustBeRed |= 1 << index
     }
   }
@@ -174,7 +200,7 @@ export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
 
   const dyadicPairs = buildPreparedDyadicPairs(game, txs)
   const conditionals = buildPreparedConditionals(game, txs)
-  const { mustBeBlue, mustBeRed } = buildFixedColorMasks(game)
+  const { mustBeBlue, mustBeRed } = buildFixedColorMasks(game, txs)
   const results: SolverResult[] = []
   const upperBound = 1 << playerCount
 

@@ -1,4 +1,4 @@
-import type { ConditionalTx, DyadicTx, Game, Player, Transaction } from '../solver/types'
+import type { ColorTx, ConditionalTx, DyadicTx, Game, Player, Transaction } from '../solver/types'
 
 export function createPlayers(names: string[]): Player[] {
   return names.map((name, index) => ({
@@ -31,6 +31,19 @@ export function createDyadicTxFixture(
     kind: 'dyadic',
     gameId: 'game-1',
     createdAt: 200,
+    enabled: true,
+    ...overrides,
+  }
+}
+
+export function createColorTxFixture(
+  overrides: Partial<ColorTx> & Pick<ColorTx, 'playerId' | 'color'>,
+): ColorTx {
+  return {
+    id: `tx-${Math.random().toString(36).slice(2)}`,
+    kind: 'color',
+    gameId: 'game-1',
+    createdAt: 250,
     enabled: true,
     ...overrides,
   }

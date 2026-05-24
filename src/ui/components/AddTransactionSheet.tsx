@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { saveTransaction, useGame } from '../../db/queries'
 import type {
   Color,
+  ColorTx,
   ConditionalTx,
   DyadicTx,
   Game,
@@ -10,7 +11,7 @@ import type {
 } from '../../solver/types'
 import { PlayerPicker } from './PlayerPicker'
 
-type TransactionMode = 'dyadic' | 'conditional'
+type TransactionMode = 'dyadic' | 'color' | 'conditional'
 
 interface DyadicDraft {
   active: string
@@ -22,6 +23,11 @@ interface EquationDraft {
   i: string
   j: string
   weight: string
+}
+
+interface ColorDraft {
+  playerId: string
+  color: Color
 }
 
 interface ConditionalDraft {
@@ -44,6 +50,15 @@ function getDefaultDyadicDraft(game: Game | undefined): DyadicDraft {
     active: players[0]?.id ?? '',
     passive: players[1]?.id ?? players[0]?.id ?? '',
     weight: '1',
+  }
+}
+
+function getDefaultColorDraft(game: Game | undefined): ColorDraft {
+  const players = game?.players ?? []
+
+  return {
+    playerId: players[0]?.id ?? '',
+    color: 'blue',
   }
 }
 
@@ -160,6 +175,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<TransactionMode>('dyadic')
   const [dyadicDraft, setDyadicDraft] = useState<DyadicDraft>(() => getDefaultDyadicDraft(game))
+  const [colorDraft, setColorDraft] = useState<ColorDraft>(() => getDefaultColorDraft(game))
   const [conditionalDraft, setConditionalDraft] = useState<ConditionalDraft>(() =>
     getDefaultConditionalDraft(game),
   )
@@ -188,6 +204,14 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
       return null
     }
 
+    if (mode === 'color') {
+      if (colorDraft.playerId === '') {
+        return 'Pick a player.'
+      }
+
+      return null
+    }
+
     if (conditionalDraft.playerId === '') {
       return 'Pick the player for the condition.'
     }
@@ -205,7 +229,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
     }
 
     return null
-  }, [conditionalDraft, dyadicDraft, game, mode])
+  }, [colorDraft, conditionalDraft, dyadicDraft, game, mode])
 
   async function handleSave(): Promise<void> {
     if (validationError !== null) {
@@ -228,6 +252,17 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
         weight: parseWeight(dyadicDraft.weight)!,
         note: normalizedNote === '' ? undefined : normalizedNote,
       } satisfies DyadicTx
+    } else if (mode === 'color') {
+      transaction = {
+        id: crypto.randomUUID(),
+        kind: 'color',
+        gameId: game.id,
+        createdAt: now,
+        enabled: true,
+        playerId: colorDraft.playerId,
+        color: colorDraft.color,
+        note: normalizedNote === '' ? undefined : normalizedNote,
+      } satisfies ColorTx
     } else {
       transaction = {
         id: crypto.randomUUID(),
@@ -268,7 +303,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-mist-100">Add transaction</h2>
-            <p className="text-sm text-mist-400">Create a dyadic or conditional observation.</p>
+            <p className="text-sm text-mist-400">Create a dyadic, color, or conditional observation.</p>
           </div>
           <button
             type="button"
@@ -279,7 +314,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
           </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-mist-800 bg-mist-900/70 p-1">
+        <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl border border-mist-800 bg-mist-900/70 p-1">
           <button
             type="button"
             className={`rounded-xl px-3 py-2 text-sm font-medium ${
@@ -290,6 +325,17 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
             onClick={() => setMode('dyadic')}
           >
             Dyadic
+          </button>
+          <button
+            type="button"
+            className={`rounded-xl px-3 py-2 text-sm font-medium ${
+              mode === 'color'
+                ? 'bg-mist-200 text-mist-950'
+                : 'text-mist-300 hover:bg-mist-800'
+            }`}
+            onClick={() => setMode('color')}
+          >
+            Color
           </button>
           <button
             type="button"
@@ -338,6 +384,34 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
                 }
               />
             </>
+          ) : mode === 'color' ? (
+            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+              <PlayerPicker
+                label="Player"
+                players={game.players}
+                value={colorDraft.playerId}
+                onChange={(playerId) =>
+                  setColorDraft((currentDraft) => ({ ...currentDraft, playerId }))
+                }
+              />
+              <label className="flex flex-col gap-2 text-sm text-mist-300">
+                <span>is</span>
+                <select
+                  aria-label="Color"
+                  className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 text-base text-mist-100"
+                  value={colorDraft.color}
+                  onChange={(event) =>
+                    setColorDraft((currentDraft) => ({
+                      ...currentDraft,
+                      color: event.target.value as Color,
+                    }))
+                  }
+                >
+                  <option value="blue">Blue</option>
+                  <option value="red">Red</option>
+                </select>
+              </label>
+            </div>
           ) : (
             <>
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">

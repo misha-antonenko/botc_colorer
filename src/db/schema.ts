@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { ConditionalTx, DyadicTx, Game, Transaction } from '../solver/types'
+import type { ColorTx, ConditionalTx, DyadicTx, Game, Transaction } from '../solver/types'
 
 export interface GameRow {
   id: string
@@ -80,6 +80,19 @@ export function decodeTransactionRow(row: TransactionRow): Transaction {
       id: row.id,
       gameId: row.gameId,
       kind: 'dyadic',
+      enabled: row.enabled,
+      createdAt: row.createdAt,
+    }
+  }
+
+  if (row.kind === 'color') {
+    const payload = JSON.parse(row.payloadJSON) as ColorTx
+
+    return {
+      ...payload,
+      id: row.id,
+      gameId: row.gameId,
+      kind: 'color',
       enabled: row.enabled,
       createdAt: row.createdAt,
     }

@@ -17,7 +17,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 import { saveGame } from '../../../db/queries'
 import { shiftBlueRangeWithPlayerCount } from '../../../solver/blueRange'
-import type { Color, Game, Player, Transaction } from '../../../solver/types'
+import type { Game, Player, Transaction } from '../../../solver/types'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
 
 interface SetupTabProps {
@@ -35,20 +35,7 @@ interface SortablePlayerCardProps {
   index: number
   cannotRemove: boolean
   onNameChange: (name: string) => void
-  onToggleColor: () => void
   onRemove: () => void
-}
-
-function cycleColor(currentColor: Color | null): Color | null {
-  if (currentColor === null) {
-    return 'blue'
-  }
-
-  if (currentColor === 'blue') {
-    return 'red'
-  }
-
-  return null
 }
 
 function validateBlueRange(game: Game): string | null {
@@ -101,7 +88,6 @@ function SortablePlayerCard({
   index,
   cannotRemove,
   onNameChange,
-  onToggleColor,
   onRemove,
 }: SortablePlayerCardProps) {
   const {
@@ -113,16 +99,6 @@ function SortablePlayerCard({
     transition,
     isDragging,
   } = useSortable({ id: player.id })
-  const fixedColorLabel =
-    player.fixedColor === null ? 'Unknown' : player.fixedColor === 'blue' ? 'Blue' : 'Red'
-  const fixedColorShortLabel =
-    player.fixedColor === null ? '?' : player.fixedColor === 'blue' ? 'B' : 'R'
-  const fixedColorClasses =
-    player.fixedColor === 'blue'
-      ? 'border-blue-300/50 bg-blue-500 text-white'
-      : player.fixedColor === 'red'
-        ? 'border-red-300/50 bg-red-500 text-white'
-        : 'border-mist-700 bg-mist-950 text-mist-200'
 
   return (
     <SwipeActionRow
@@ -149,25 +125,13 @@ function SortablePlayerCard({
             <span className="text-sm font-semibold text-mist-200">{index + 1}</span>
           </div>
 
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              type="button"
-              aria-label={`Seat ${index + 1} fixed color: ${fixedColorLabel}`}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${fixedColorClasses}`}
-              title={fixedColorLabel}
-              onClick={onToggleColor}
-            >
-              {fixedColorShortLabel}
-            </button>
-
-            <div className="min-w-0 flex-1">
-              <input
-                aria-label={`Player ${index + 1} name`}
-                className="min-w-0 w-full rounded-xl border border-mist-700 bg-mist-950 px-3 py-2 text-base text-mist-100"
-                value={player.name}
-                onChange={(event) => onNameChange(event.target.value)}
-              />
-            </div>
+          <div className="min-w-0 flex-1">
+            <input
+              aria-label={`Player ${index + 1} name`}
+              className="min-w-0 w-full rounded-xl border border-mist-700 bg-mist-950 px-3 py-2 text-base text-mist-100"
+              value={player.name}
+              onChange={(event) => onNameChange(event.target.value)}
+            />
           </div>
 
           <button
@@ -209,6 +173,11 @@ export function SetupTab({ game, txs }: SetupTabProps) {
       if (transaction.kind === 'dyadic') {
         ids.add(transaction.active)
         ids.add(transaction.passive)
+        continue
+      }
+
+      if (transaction.kind === 'color') {
+        ids.add(transaction.playerId)
         continue
       }
 
@@ -455,19 +424,6 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                         ...currentDraft,
                         players: currentDraft.players.map((currentPlayer, currentIndex) =>
                           currentIndex === index ? { ...currentPlayer, name } : currentPlayer,
-                        ),
-                      }))
-                    }
-                    onToggleColor={() =>
-                      updateDraft((currentDraft) => ({
-                        ...currentDraft,
-                        players: currentDraft.players.map((currentPlayer, currentIndex) =>
-                          currentIndex === index
-                            ? {
-                                ...currentPlayer,
-                                fixedColor: cycleColor(currentPlayer.fixedColor),
-                              }
-                            : currentPlayer,
                         ),
                       }))
                     }

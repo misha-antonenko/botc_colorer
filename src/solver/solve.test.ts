@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildColoringContributionBreakdown, solveGame } from './solve'
-import { createConditionalTxFixture, createDyadicTxFixture, createGameFixture, createPlayers } from '../test/fixtures'
+import { createColorTxFixture, createConditionalTxFixture, createDyadicTxFixture, createGameFixture, createPlayers } from '../test/fixtures'
 
 describe('solveGame', () => {
   it('ranks a single dyadic transaction correctly', () => {
@@ -102,22 +102,81 @@ describe('solveGame', () => {
     ])
   })
 
-  it('prunes fixed colors', () => {
+  it('prunes fixed colors from color transactions', () => {
     const players = createPlayers(['Alice', 'Bob'])
-    const game = createGameFixture({
-      players: [
-        { ...players[0], fixedColor: 'blue' },
-        players[1],
-      ],
-      blueCountMax: 2,
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const colorTx = createColorTxFixture({
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'blue',
     })
 
-    const results = solveGame(game, [])
+    const results = solveGame(game, [colorTx])
 
     expect(results).toEqual([
       { c: 3, fitness: 0 },
       { c: 1, fitness: 0 },
     ])
+  })
+
+  it('prunes fixed red from color transactions', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const colorTx = createColorTxFixture({
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'red',
+    })
+
+    const results = solveGame(game, [colorTx])
+
+    expect(results).toEqual([
+      { c: 2, fitness: 0 },
+      { c: 0, fitness: 0 },
+    ])
+  })
+
+  it('uses the latest color transaction when multiple target the same player', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const olderTx = createColorTxFixture({
+      id: 'tx-older',
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'red',
+      createdAt: 100,
+    })
+    const newerTx = createColorTxFixture({
+      id: 'tx-newer',
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'blue',
+      createdAt: 200,
+    })
+
+    // Newer says blue — only colorings with Alice blue should survive.
+    const results = solveGame(game, [olderTx, newerTx])
+
+    expect(results).toEqual([
+      { c: 3, fitness: 0 },
+      { c: 1, fitness: 0 },
+    ])
+  })
+
+  it('ignores disabled color transactions', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const colorTx = createColorTxFixture({
+      gameId: game.id,
+      playerId: players[0].id,
+      color: 'blue',
+      enabled: false,
+    })
+
+    // Disabled — all 4 colorings survive.
+    const results = solveGame(game, [colorTx])
+
+    expect(results).toHaveLength(4)
   })
 
   it('prunes by the blue range', () => {

@@ -54,7 +54,13 @@ const conditionalSchema = baseTxSchema.extend({
   equations: z.array(equationSchema).min(1),
 })
 
-const transactionSchema = z.discriminatedUnion('kind', [dyadicSchema, conditionalSchema])
+const colorTxSchema = baseTxSchema.extend({
+  kind: z.literal('color'),
+  playerId: z.string().min(1),
+  color: colorSchema,
+})
+
+const transactionSchema = z.discriminatedUnion('kind', [dyadicSchema, colorTxSchema, conditionalSchema])
 
 const portablePayloadSchema = z.object({
   version: z.literal(1),
@@ -104,6 +110,13 @@ function assertPortableRelationships(payload: PortablePayload): void {
     if (transaction.kind === 'dyadic') {
       if (!playerIds.has(transaction.active) || !playerIds.has(transaction.passive)) {
         throw new Error(`Transaction ${transaction.id} references missing players`)
+      }
+      continue
+    }
+
+    if (transaction.kind === 'color') {
+      if (!playerIds.has(transaction.playerId)) {
+        throw new Error(`Transaction ${transaction.id} references missing player`)
       }
       continue
     }

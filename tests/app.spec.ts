@@ -8,9 +8,14 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
 
   await page.getByRole('button', { name: 'Add player' }).click()
   await page.getByLabel('Player 6 name').fill('Frank')
-  await page.getByRole('button', { name: 'Seat 3 fixed color: Unknown' }).click()
 
   await page.getByRole('button', { name: 'Transactions' }).click()
+  await page.getByRole('link', { name: 'Add transaction' }).click()
+  await page.getByRole('button', { name: 'Color' }).click()
+  await page.getByLabel('Player').selectOption({ label: 'Player 3 (#3)' })
+  await page.getByLabel('Color').selectOption('blue')
+  await page.getByRole('button', { name: 'Save transaction' }).click()
+
   await page.getByRole('link', { name: 'Add transaction' }).click()
   const dyadicWeightInput = page.getByRole('textbox', { name: 'Weight' })
   await expect(dyadicWeightInput).toHaveCSS('font-size', '16px')

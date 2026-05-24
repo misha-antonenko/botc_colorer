@@ -42,6 +42,12 @@ export interface DyadicTx extends BaseTx {
   weight: number
 }
 
+export interface ColorTx extends BaseTx {
+  kind: 'color'
+  playerId: PlayerId
+  color: Color
+}
+
 export interface ConditionalTx extends BaseTx {
   kind: 'conditional'
   condition: {
@@ -51,7 +57,7 @@ export interface ConditionalTx extends BaseTx {
   equations: Equation[]
 }
 
-export type Transaction = DyadicTx | ConditionalTx
+export type Transaction = DyadicTx | ColorTx | ConditionalTx
 
 export interface SolverResult {
   c: number

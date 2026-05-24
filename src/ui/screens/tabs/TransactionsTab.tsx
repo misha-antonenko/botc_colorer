@@ -180,6 +180,16 @@ function TransactionSummary({ game, transaction, isEnabled, onWeightCommit }: Tr
     )
   }
 
+  if (transaction.kind === 'color') {
+    return (
+      <div className={`text-sm leading-5 ${textClass}`}>
+        {getPlayerName(game, transaction.playerId)}
+        {' is '}
+        {transaction.color}
+      </div>
+    )
+  }
+
   const conditionStr = formatConditionSummary(
     game,
     transaction.condition.playerId,
@@ -271,7 +281,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
         <div className="rounded-3xl border border-dashed border-mist-700 bg-mist-950/60 px-4 py-8 text-center text-mist-300">
           <div className="text-lg font-semibold text-mist-100">No transactions yet</div>
           <p className="mt-2 text-sm text-mist-400">
-            Add dyadic or conditional observations to populate the matrix and solutions tabs.
+            Add dyadic, color, or conditional observations to populate the matrix and solutions tabs.
           </p>
         </div>
       ) : (

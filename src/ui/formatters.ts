@@ -84,6 +84,10 @@ export function summarizeTransaction(game: Game, transaction: Transaction): stri
     )}, w = ${formatSignedNumber(transaction.weight)}`
   }
 
+  if (transaction.kind === 'color') {
+    return `${getPlayerName(game, transaction.playerId)} is ${transaction.color}`
+  }
+
   const equationSummary = transaction.equations
     .map((equation) => formatEquationSummary(game, equation.i, equation.j, equation.weight))
     .join('; ')
