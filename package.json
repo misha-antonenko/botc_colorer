@@ -9,7 +9,8 @@
     "postbuild": "node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('dist/index.html', 'dist/404.html')\"",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "npm run test:unit && npm run test:e2e",
+    "typecheck": "tsc -b",
+    "test": "npm run typecheck && npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:e2e": "playwright test"
   },
