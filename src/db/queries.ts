@@ -1,7 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Game, GameId, Player, Transaction } from '../solver/types'
-import type { GameSnapshot } from './backup'
-import { snapshotGameState } from './backup'
 import { db, decodeGameRow, decodeTransactionRow, encodeGameRow, encodeTransactionRow } from './schema'
 
 function createDefaultPlayer(index: number): Player {
@@ -101,14 +99,12 @@ export async function createGame(): Promise<Game> {
     await db.games.put(encodeGameRow(nextGame))
     return nextGame
   })
-  await snapshotGameState(game.id)
   return game
 }
 
 export async function saveGame(game: Game): Promise<Game> {
   const nextGame = touchGame(game)
   await db.games.put(encodeGameRow(nextGame))
-  await snapshotGameState(nextGame.id)
   return nextGame
 }
 
@@ -128,7 +124,6 @@ export async function duplicateGame(gameId: GameId): Promise<Game> {
   }
 
   await db.games.put(encodeGameRow(duplicate))
-  await snapshotGameState(duplicate.id)
   return duplicate
 }
 
@@ -138,7 +133,6 @@ export async function saveTransaction(transaction: Transaction): Promise<Transac
     const game = await getGameOrThrow(transaction.gameId)
     await db.games.put(encodeGameRow(touchGame(game)))
   })
-  await snapshotGameState(transaction.gameId)
   return transaction
 }
 
@@ -168,15 +162,5 @@ export async function deleteTransaction(transactionId: string): Promise<Transact
     const game = await getGameOrThrow(transaction.gameId)
     await db.games.put(encodeGameRow(touchGame(game)))
   })
-  await snapshotGameState(transaction.gameId)
   return transaction
-}
-
-export async function restoreGameSnapshot(snapshot: GameSnapshot): Promise<void> {
-  await db.transaction('rw', db.games, db.transactions, async () => {
-    await db.games.put(encodeGameRow(snapshot.game))
-    await db.transactions.where('gameId').equals(snapshot.game.id).delete()
-    await db.transactions.bulkPut(snapshot.transactions.map(encodeTransactionRow))
-  })
-  await snapshotGameState(snapshot.game.id)
 }

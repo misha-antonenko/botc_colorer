@@ -1,10 +1,8 @@
 import { useMemo, useRef, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getLatestGameSnapshot } from '../../db/backup'
 import {
   createGame,
   duplicateGame,
-  restoreGameSnapshot,
   useAllTransactions,
   useGames,
 } from '../../db/queries'
@@ -51,11 +49,6 @@ export function GamesList() {
 
     return previews
   }, [games, transactionsByGameId])
-  const latestSnapshots = useMemo(
-    () => new Map(games.map((game) => [game.id, getLatestGameSnapshot(game.id)])),
-    [games],
-  )
-
   async function handleCreateGame(): Promise<void> {
     const game = await createGame()
     navigate(`/g/${game.id}`)
@@ -85,17 +78,6 @@ export function GamesList() {
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Failed to export the game.')
     }
-  }
-
-  async function handleRestoreSnapshot(gameId: string): Promise<void> {
-    const snapshot = latestSnapshots.get(gameId)
-
-    if (snapshot === null || snapshot === undefined) {
-      return
-    }
-
-    await restoreGameSnapshot(snapshot)
-    navigate(`/g/${gameId}`)
   }
 
   async function handleImport(event: ChangeEvent<HTMLInputElement>): Promise<void> {
@@ -180,7 +162,6 @@ export function GamesList() {
         <div className="grid gap-4">
           {games.map((game) => {
             const previewFitness = previewByGameId.get(game.id) ?? null
-            const latestSnapshot = latestSnapshots.get(game.id)
 
             return (
               <article
@@ -226,14 +207,6 @@ export function GamesList() {
                       onClick={() => void handleExportGame(game.id, game.name)}
                     >
                       Export
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-full border border-mist-700 px-4 py-2 text-sm text-mist-200 disabled:cursor-not-allowed disabled:opacity-40"
-                      disabled={latestSnapshot === null || latestSnapshot === undefined}
-                      onClick={() => void handleRestoreSnapshot(game.id)}
-                    >
-                      Restore snapshot
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import type { Game, PortableImportResult, PortablePayload, Transaction } from '../solver/types'
-import { snapshotGameState } from './backup'
 import { CURRENT_VERSION, applyMigrations } from './migrations'
 import { db, decodeGameRow, decodeTransactionRow, encodeGameRow, encodeTransactionRow } from './schema'
 
@@ -243,8 +242,6 @@ export async function importPortablePayload(raw: unknown): Promise<PortableImpor
     await db.games.bulkPut(nextGames.map(encodeGameRow))
     await db.transactions.bulkPut(nextTransactions.map(encodeTransactionRow))
   })
-
-  await Promise.all(nextGames.map((game) => snapshotGameState(game.id)))
 
   return {
     games: nextGames,
