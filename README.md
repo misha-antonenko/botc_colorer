@@ -6,7 +6,7 @@ BotC colorer is a local-first progressive web app for tracking blue/red team-col
 
 A **game** has an ordered list of **players** and a **blue-count range** (the minimum and maximum number of players that can be blue).
 
-A **coloring** is an assignment of red or blue to every player. Each player is modeled as a boolean variable: true = red, false = blue.
+A **coloring** is an assignment of red or blue to every player. Each player is modeled as a boolean variable: true = blue, false = red.
 
 A **transaction** is an observation about player colors, expressed as a propositional-logic formula (e.g., `Al = Bob` means Alice and Bob are the same color). Each transaction is either **hard** or **soft**:
 

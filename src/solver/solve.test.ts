@@ -14,7 +14,7 @@ describe('solveGame', () => {
 
     const results = solveGame(game, [tx])
 
-    // same color (0b00=both blue, 0b11=both red) → +1; different → -1
+    // same color (0b11=both blue, 0b00=both red) → +1; different → -1
     expect(results).toEqual([
       { c: 3, fitness: 1 },
       { c: 0, fitness: 1 },
@@ -68,7 +68,7 @@ describe('solveGame', () => {
   it('hard constraint prunes colorings', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    // Alice is blue → ~Alice (NOT red)
+    // Alice is red → ~Alice (NOT blue)
     const tx = createLogicalTxFixture({
       formula: '~Alice',
       hard: true,
@@ -77,11 +77,11 @@ describe('solveGame', () => {
 
     const results = solveGame(game, [tx])
 
-    // Only colorings where Alice is blue (bit 0 = 0): 0b00 and 0b10
+    // Only colorings where Alice is red (bit 0 = 0): 0b00 and 0b10
     expect(results.map((r) => r.c).sort()).toEqual([0, 2])
   })
 
-  it('hard constraint for red prunes correctly', () => {
+  it('hard constraint for blue prunes correctly', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
     const tx = createLogicalTxFixture({
@@ -92,14 +92,14 @@ describe('solveGame', () => {
 
     const results = solveGame(game, [tx])
 
-    // Only colorings where Alice is red (bit 0 = 1): 0b01 and 0b11
+    // Only colorings where Alice is blue (bit 0 = 1): 0b01 and 0b11
     expect(results.map((r) => r.c).sort()).toEqual([1, 3])
   })
 
   it('implication formula works', () => {
     const players = createPlayers(['Alice', 'Bob', 'Carol'])
     const game = createGameFixture({ players })
-    // If Alice is blue, then Bob = Carol (same color)
+    // If Alice is red, then Bob = Carol (same color)
     // ~Alice => (Bob = Carol)
     const tx = createLogicalTxFixture({
       formula: '~Al => (Bob = C)',
@@ -109,11 +109,11 @@ describe('solveGame', () => {
 
     const results = solveGame(game, [tx])
 
-    // When Alice is red (bit0=1), formula is vacuously true → +1
-    // When Alice is blue (bit0=0), formula depends on Bob = Carol
+    // When Alice is blue (bit0=1), formula is vacuously true → +1
+    // When Alice is red (bit0=0), formula depends on Bob = Carol
     //   Bob=Carol → +1, Bob!=Carol → -1
-    const aliceRedResults = results.filter((r) => (r.c & 1) === 1)
-    expect(aliceRedResults.every((r) => r.fitness === 1)).toBe(true)
+    const aliceBlueResults = results.filter((r) => (r.c & 1) === 1)
+    expect(aliceBlueResults.every((r) => r.fitness === 1)).toBe(true)
   })
 
   it('prunes by the blue range', () => {
@@ -194,9 +194,9 @@ describe('solveGame', () => {
 
     const results = solveGame(game, [hardTx, softTx])
 
-    // Alice must be blue → only c=0 (both blue) and c=2 (Bob red)
-    // c=2: Bob is red → satisfied → +2
-    // c=0: Bob is blue → unsatisfied → -2
+    // Alice must be red → only c=0 (both red) and c=2 (Bob blue)
+    // c=2: Bob is blue → satisfied → +2
+    // c=0: Bob is red → unsatisfied → -2
     expect(results).toEqual([
       { c: 2, fitness: 2 },
       { c: 0, fitness: -2 },

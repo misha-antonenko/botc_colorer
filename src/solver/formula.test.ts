@@ -382,23 +382,23 @@ describe('compileAst', () => {
   ]
 
   // Coloring bits: bit 0 = Alice, bit 1 = Bob
-  // 0b00 = both blue, 0b01 = Alice red, 0b10 = Bob red, 0b11 = both red
+  // 0b00 = both red, 0b01 = Alice blue, 0b10 = Bob blue, 0b11 = both blue
 
-  it('evaluates variable (is red)', () => {
+  it('evaluates variable (is blue)', () => {
     const fn = makeEvaluator('Alice', twoPlayers)
-    expect(fn(0b00)).toBe(false) // Alice blue
-    expect(fn(0b01)).toBe(true) // Alice red
-    expect(fn(0b10)).toBe(false) // Alice blue
-    expect(fn(0b11)).toBe(true) // Alice red
+    expect(fn(0b00)).toBe(false) // Alice red
+    expect(fn(0b01)).toBe(true) // Alice blue
+    expect(fn(0b10)).toBe(false) // Alice red
+    expect(fn(0b11)).toBe(true) // Alice blue
   })
 
   it('evaluates NOT', () => {
     const fn = makeEvaluator('!Alice', twoPlayers)
-    expect(fn(0b00)).toBe(true) // Alice blue → NOT red → true
-    expect(fn(0b01)).toBe(false) // Alice red → false
+    expect(fn(0b00)).toBe(true) // Alice red → NOT blue → true
+    expect(fn(0b01)).toBe(false) // Alice blue → false
   })
 
-  it('evaluates AND: both red', () => {
+  it('evaluates AND: both blue', () => {
     const fn = makeEvaluator('Al & Bob', twoPlayers)
     expect(fn(0b00)).toBe(false)
     expect(fn(0b01)).toBe(false)
@@ -406,7 +406,7 @@ describe('compileAst', () => {
     expect(fn(0b11)).toBe(true)
   })
 
-  it('evaluates OR: at least one red', () => {
+  it('evaluates OR: at least one blue', () => {
     const fn = makeEvaluator('Al | Bob', twoPlayers)
     expect(fn(0b00)).toBe(false)
     expect(fn(0b01)).toBe(true)
@@ -432,40 +432,40 @@ describe('compileAst', () => {
 
   it('evaluates IMPLIES (=>)', () => {
     const fn = makeEvaluator('Al => Bob', twoPlayers)
-    expect(fn(0b00)).toBe(true) // both blue → F => F = T
-    // 0b01 = Alice red (bit0=1), Bob blue (bit1=0)
-    // Alice red => Bob red? Alice is red, Bob is blue → false
+    expect(fn(0b00)).toBe(true) // both red → F => F = T
+    // 0b01 = Alice blue (bit0=1), Bob red (bit1=0)
+    // Alice blue => Bob blue? Alice is blue, Bob is red → false
     expect(fn(0b01)).toBe(false)
-    expect(fn(0b10)).toBe(true) // Alice blue => Bob red? Alice not red, so vacuously true
-    expect(fn(0b11)).toBe(true) // Both red → true
+    expect(fn(0b10)).toBe(true) // Alice red => Bob blue? Alice not blue, so vacuously true
+    expect(fn(0b11)).toBe(true) // Both blue → true
   })
 
   it('evaluates reverse implies (<=)', () => {
     // A <= B means B => A
     const fn = makeEvaluator('Al <= Bob', twoPlayers)
     // Bob => Alice
-    expect(fn(0b00)).toBe(true) // Bob blue → vacuously true
-    expect(fn(0b01)).toBe(true) // Bob blue → vacuously true
-    expect(fn(0b10)).toBe(false) // Bob red, Alice blue → false
-    expect(fn(0b11)).toBe(true) // Both red → true
+    expect(fn(0b00)).toBe(true) // Bob red → vacuously true
+    expect(fn(0b01)).toBe(true) // Bob red → vacuously true
+    expect(fn(0b10)).toBe(false) // Bob blue, Alice red → false
+    expect(fn(0b11)).toBe(true) // Both blue → true
   })
 
   it('evaluates complex formula: !(A & B) = (A ^ B | !A)', () => {
     const fn = makeEvaluator('!(Al & Bob) = (Al ^ Bob | !Al)', twoPlayers)
     // Check all 4 colorings — this should evaluate the boolean identity
     for (let c = 0; c < 4; c++) {
-      const aRed = (c & 1) === 1
-      const bRed = (c & 2) === 2
-      const left = !(aRed && bRed)
-      const right = (aRed !== bRed) || !aRed
+      const aBlue = (c & 1) === 1
+      const bBlue = (c & 2) === 2
+      const left = !(aBlue && bBlue)
+      const right = (aBlue !== bBlue) || !aBlue
       expect(fn(c)).toBe(left === right)
     }
   })
 
   it('evaluates prefix resolution: Al resolves to Alice', () => {
     const fn = makeEvaluator('Al', twoPlayers)
-    expect(fn(0b01)).toBe(true) // Alice red
-    expect(fn(0b00)).toBe(false) // Alice blue
+    expect(fn(0b01)).toBe(true) // Alice blue
+    expect(fn(0b00)).toBe(false) // Alice red
   })
 
   it('works with three players', () => {
@@ -476,11 +476,11 @@ describe('compileAst', () => {
     ]
     // bit 0 = Alice, bit 1 = Bob, bit 2 = Carol
     const fn = makeEvaluator('Al & B => C', threePlayers)
-    // Alice red AND Bob red => Carol red
-    expect(fn(0b000)).toBe(true) // neither red, vacuously true
-    expect(fn(0b011)).toBe(false) // Alice+Bob red, Carol blue → false
-    expect(fn(0b111)).toBe(true) // all red → true
-    expect(fn(0b100)).toBe(true) // only Carol red, premise false → true
+    // Alice blue AND Bob blue => Carol blue
+    expect(fn(0b000)).toBe(true) // neither blue, vacuously true
+    expect(fn(0b011)).toBe(false) // Alice+Bob blue, Carol red → false
+    expect(fn(0b111)).toBe(true) // all blue → true
+    expect(fn(0b100)).toBe(true) // only Carol blue, premise false → true
   })
 })
 
