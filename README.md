@@ -32,7 +32,7 @@ Formulas are propositional logic over player-name prefixes. A prefix resolves to
 | Operator | Meaning |
 |---|---|
 | `!` / `~` | NOT (unary) |
-| `&` | AND |
+| `&` / `*` | AND |
 | `^` / `+` / `!=` | XOR (different color) |
 | `\|` | OR |
 | `=` | XNOR (same color) |

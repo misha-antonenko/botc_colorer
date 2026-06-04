@@ -3,7 +3,9 @@ import {
   FormulaError,
   compileAst,
   extractVariables,
+  formatFormula,
   parseFormula,
+  resolveFormula,
   resolvePlayerPrefix,
   tokenize,
   validateFormula,
@@ -24,9 +26,15 @@ describe('tokenize', () => {
   })
 
   it('tokenizes all single-char operators', () => {
-    const tokens = tokenize('! ~ & | ^ + ( )')
+    const tokens = tokenize('! ~ & * | ^ + ( )')
     const types = tokens.map((t) => t.type)
-    expect(types).toEqual(['NOT', 'NOT', 'AND', 'OR', 'XOR', 'XOR', 'LPAREN', 'RPAREN'])
+    expect(types).toEqual(['NOT', 'NOT', 'AND', 'AND', 'OR', 'XOR', 'XOR', 'LPAREN', 'RPAREN'])
+  })
+
+  it('tokenizes * as AND', () => {
+    const tokens = tokenize('A*B')
+    expect(tokens.map((t) => t.type)).toEqual(['IDENT', 'AND', 'IDENT'])
+    expect(tokens[1].value).toBe('*')
   })
 
   it('tokenizes multi-char operators', () => {
@@ -598,5 +606,102 @@ describe('wouldRenameMakeFormulasAmbiguous', () => {
       'Bobby',
     )
     expect(result).toBeNull()
+  })
+})
+
+// ── Formula formatting ──────────────────────────────────────────────────────
+
+describe('formatFormula', () => {
+  const fmtPlayers: Player[] = [
+    { id: 'p1', name: 'Alice' },
+    { id: 'p2', name: 'Bob' },
+    { id: 'p3', name: 'Carol' },
+  ]
+
+  function fmt(input: string): string {
+    const resolved = resolveFormula(input, fmtPlayers)
+    return formatFormula(resolved.ast, resolved.playerMap)
+  }
+
+  it('expands prefixes to full names', () => {
+    expect(fmt('Al ^ B')).toBe('Alice ^ Bob')
+  })
+
+  it('preserves original capitalization of player names', () => {
+    expect(fmt('alice')).toBe('Alice')
+  })
+
+  it('formats NOT without trailing space', () => {
+    expect(fmt('~ Al')).toBe('~Alice')
+  })
+
+  it('formats double NOT', () => {
+    expect(fmt('!!Al')).toBe('~~Alice')
+  })
+
+  it('formats binary operators with spaces', () => {
+    expect(fmt('Al&Bob')).toBe('Alice & Bob')
+  })
+
+  it('normalizes * to &', () => {
+    expect(fmt('Al*B')).toBe('Alice & Bob')
+  })
+
+  it('normalizes + to ^', () => {
+    expect(fmt('Al+B')).toBe('Alice ^ Bob')
+  })
+
+  it('normalizes != to ^', () => {
+    expect(fmt('Al!=B')).toBe('Alice ^ Bob')
+  })
+
+  it('normalizes ! to ~', () => {
+    expect(fmt('!Al')).toBe('~Alice')
+  })
+
+  it('normalizes <= to => with swapped operands', () => {
+    expect(fmt('Al <= Bob')).toBe('Bob => Alice')
+  })
+
+  it('adds parentheses for lower-precedence subexpressions', () => {
+    expect(fmt('Al & (B | C)')).toBe('Alice & (Bob | Carol)')
+  })
+
+  it('omits parentheses when precedence is sufficient', () => {
+    expect(fmt('(Al & B) | C')).toBe('Alice & Bob | Carol')
+  })
+
+  it('adds parentheses for right-child at same precedence', () => {
+    expect(fmt('Al => (B => C)')).toBe('Alice => (Bob => Carol)')
+  })
+
+  it('omits parentheses for left-child at same precedence', () => {
+    expect(fmt('(Al => B) => C')).toBe('Alice => Bob => Carol')
+  })
+
+  it('handles complex nested formula', () => {
+    expect(fmt('~C => (Al ^ B)')).toBe('~Carol => Alice ^ Bob')
+  })
+
+  it('drops redundant parens when right child has higher precedence', () => {
+    expect(fmt('Al => (B = C)')).toBe('Alice => Bob = Carol')
+  })
+
+  it('round-trips: parsing the formatted output yields equivalent evaluation', () => {
+    const input = '~C => (Al ^ B) | Al = Bob'
+    const formatted = fmt(input)
+    const originalResolved = resolveFormula(input, fmtPlayers)
+    const roundTripResolved = resolveFormula(formatted, fmtPlayers)
+    const originalFn = compileAst(originalResolved.ast, (v) => {
+      const p = originalResolved.playerMap.get(v)!
+      return fmtPlayers.findIndex((fp) => fp.id === p.id)
+    })
+    const roundTripFn = compileAst(roundTripResolved.ast, (v) => {
+      const p = roundTripResolved.playerMap.get(v)!
+      return fmtPlayers.findIndex((fp) => fp.id === p.id)
+    })
+    for (let c = 0; c < 8; c++) {
+      expect(roundTripFn(c)).toBe(originalFn(c))
+    }
   })
 })

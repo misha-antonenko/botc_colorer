@@ -42,7 +42,7 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
 
   await page.getByRole('button', { name: 'Transactions' }).click()
   const formulaRow = page.locator('article').filter({
-    hasText: 'Al = Bob',
+    hasText: 'Alice = Bob',
   })
   await expect(formulaRow.getByText('Clockmaker info')).toBeVisible()
   await formulaRow.getByLabel('Enabled').uncheck()

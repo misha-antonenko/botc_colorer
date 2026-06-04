@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { saveTransaction, useGame } from '../../db/queries'
-import { validateFormula } from '../../solver/formula'
+import { formatFormula, resolveFormula, validateFormula } from '../../solver/formula'
 import type { Game, LogicalTx } from '../../solver/types'
 
 function parseWeight(value: string): number | null {
@@ -74,6 +74,8 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
     const now = Date.now()
     const normalizedNote = note.trim()
     const parsedWeight = hard ? 1 : parseWeight(weight)!
+    const resolved = resolveFormula(formula.trim(), game.players)
+    const formattedFormula = formatFormula(resolved.ast, resolved.playerMap)
 
     const transaction: LogicalTx = {
       id: crypto.randomUUID(),
@@ -81,7 +83,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
       gameId: game.id,
       createdAt: now,
       enabled: true,
-      formula: formula.trim(),
+      formula: formattedFormula,
       weight: parsedWeight,
       hard,
       note: normalizedNote === '' ? undefined : normalizedNote,
@@ -183,7 +185,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
 
         <div className="mt-3 rounded-xl border border-mist-800 bg-mist-900/50 px-3 py-2 text-xs text-mist-400">
           <p>
-            Operators (by precedence): <code>! ~</code> (not), <code>&</code> (and),{' '}
+            Operators (by precedence): <code>! ~</code> (not), <code>& *</code> (and),{' '}
             <code>^ + !=</code> (xor), <code>|</code> (or), <code>=</code> (same color),{' '}
             <code>{'=> <='}</code> (implies). Use player name prefixes as variables.
           </p>

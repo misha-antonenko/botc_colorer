@@ -31,7 +31,7 @@ interface Token {
   position: number
 }
 
-const OPERATOR_CHARS = new Set('=><|!~^+&()')
+const OPERATOR_CHARS = new Set('=><|!~^+&*()')
 
 function isWhitespace(char: string): boolean {
   return char === ' ' || char === '\t' || char === '\n' || char === '\r'
@@ -80,6 +80,10 @@ export function tokenize(input: string): Token[] {
         break
       case '+':
         tokens.push({ type: 'XOR', value: '+', position })
+        i += 1
+        break
+      case '*':
+        tokens.push({ type: 'AND', value: '*', position })
         i += 1
         break
       case '=':
@@ -405,6 +409,56 @@ export function compileAst(
       return (c) => !left(c) || right(c)
     }
   }
+}
+
+// ── Formatting ──────────────────────────────────────────────────────────────
+
+const NODE_PRECEDENCE: Record<AstNode['type'], number> = {
+  implies: 1,
+  eq: 2,
+  or: 3,
+  xor: 4,
+  and: 5,
+  not: 6,
+  var: 7,
+}
+
+const BINARY_SYMBOL: Record<string, string> = {
+  and: '&',
+  or: '|',
+  xor: '^',
+  eq: '=',
+  implies: '=>',
+}
+
+function formatNode(
+  node: AstNode,
+  playerMap: Map<string, Player>,
+  parentPrecedence: number,
+  isRightChild: boolean,
+): string {
+  switch (node.type) {
+    case 'var': {
+      const player = playerMap.get(node.name)
+      return player?.name ?? node.name
+    }
+    case 'not': {
+      const operand = formatNode(node.operand, playerMap, NODE_PRECEDENCE.not, false)
+      return `~${operand}`
+    }
+    default: {
+      const prec = NODE_PRECEDENCE[node.type]
+      const left = formatNode(node.left, playerMap, prec, false)
+      const right = formatNode(node.right, playerMap, prec, true)
+      const inner = `${left} ${BINARY_SYMBOL[node.type]} ${right}`
+      const needsParens = isRightChild ? prec <= parentPrecedence : prec < parentPrecedence
+      return needsParens ? `(${inner})` : inner
+    }
+  }
+}
+
+export function formatFormula(ast: AstNode, playerMap: Map<string, Player>): string {
+  return formatNode(ast, playerMap, 0, false)
 }
 
 // ── Validation helpers ───────────────────────────────────────────────────────
