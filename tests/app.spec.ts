@@ -9,44 +9,43 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   await page.getByRole('button', { name: 'Add player' }).click()
   await page.getByLabel('Player 6 name').fill('Frank')
 
+  // Rename players to avoid space-in-name issues with prefix resolution
+  await page.getByLabel('Player 1 name').fill('Alice')
+  await page.getByLabel('Player 2 name').fill('Bob')
+  await page.getByLabel('Player 3 name').fill('Carol')
+
   await page.getByRole('button', { name: 'Transactions' }).click()
+
+  // Add a hard constraint: Carol is blue
   await page.getByRole('link', { name: 'Add transaction' }).click()
-  await page.getByRole('button', { name: 'Color' }).click()
-  await page.getByLabel('Player').selectOption({ label: 'Player 3 (#3)' })
-  await page.getByLabel('Color').selectOption('blue')
+  await page.getByLabel('Formula').fill('~C')
+  await page.getByRole('button', { name: 'Toggle hard constraint' }).click()
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
+  // Add a soft formula: Alice same color as Bob
   await page.getByRole('link', { name: 'Add transaction' }).click()
-  const dyadicWeightInput = page.getByRole('textbox', { name: 'Weight' })
-  await expect(dyadicWeightInput).toHaveCSS('font-size', '16px')
-  await dyadicWeightInput.fill('2')
+  const weightInput = page.getByLabel('Weight')
+  await expect(weightInput).toHaveCSS('font-size', '16px')
+  await weightInput.fill('2')
+  await page.getByLabel('Formula').fill('Al = Bob')
   await page.getByLabel('Note').fill('Clockmaker info')
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
+  // Add an implication: if Carol is blue then Alice differs from Bob
   await page.getByRole('link', { name: 'Add transaction' }).click()
-  await page.getByRole('button', { name: 'Conditional' }).click()
-  await page.getByLabel('If player').selectOption({
-    label: 'Player 3 (#3)',
-  })
-  await page.getByLabel('Active player').selectOption({
-    label: 'Player 1 (#1)',
-  })
-  await page.getByLabel('Passive player').selectOption({
-    label: 'Player 2 (#2)',
-  })
-  await page.getByRole('textbox', { name: 'Weight' }).fill('2')
-  await page.getByLabel('Toggle conditional weight sign').click()
+  await page.getByLabel('Formula').fill('~C => (Al ^ Bob)')
+  await page.getByLabel('Weight').fill('2')
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
   await page.getByRole('button', { name: 'Solutions' }).click()
   const firstSolutionBefore = await page.getByText(/Fitness = /).first().textContent()
 
   await page.getByRole('button', { name: 'Transactions' }).click()
-  const dyadicRow = page.locator('article').filter({
-    hasText: 'Player 1 → Player 2, w = +2',
+  const formulaRow = page.locator('article').filter({
+    hasText: 'Al = Bob',
   })
-  await expect(dyadicRow.getByText('Clockmaker info')).toBeVisible()
-  await dyadicRow.getByLabel('Enabled').uncheck()
+  await expect(formulaRow.getByText('Clockmaker info')).toBeVisible()
+  await formulaRow.getByLabel('Enabled').uncheck()
 
   await page.getByRole('button', { name: 'Solutions' }).click()
   const firstSolutionAfter = await page.getByText(/Fitness = /).first().textContent()
