@@ -11,7 +11,7 @@ describe('TransactionsTab', () => {
     const tx = createLogicalTxFixture({
       gameId: game.id,
       formula: 'Al = Bob',
-      weight: 2,
+      weight: 1,
       note: 'Clockmaker info',
     })
 
@@ -23,6 +23,31 @@ describe('TransactionsTab', () => {
 
     expect(screen.getByText('Clockmaker info')).toBeInTheDocument()
     expect(screen.getByText('Al = Bob')).toBeInTheDocument()
-    expect(screen.getByTitle('Tap to edit weight')).toHaveTextContent('+2')
+  })
+
+  it('shows weight only when it is not 1', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players })
+    const txWeight1 = createLogicalTxFixture({
+      gameId: game.id,
+      formula: 'Al',
+      weight: 1,
+    })
+    const txWeight2 = createLogicalTxFixture({
+      gameId: game.id,
+      formula: 'Bob',
+      weight: 2,
+    })
+
+    render(
+      <MemoryRouter>
+        <TransactionsTab game={game} txs={[txWeight1, txWeight2]} />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Al')).toBeInTheDocument()
+    expect(screen.getByText('Bob')).toBeInTheDocument()
+    expect(screen.getByText(', w = +2')).toBeInTheDocument()
+    expect(screen.queryByText(', w = +1')).not.toBeInTheDocument()
   })
 })

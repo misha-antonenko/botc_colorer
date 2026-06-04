@@ -4,21 +4,6 @@ import { saveTransaction, useGame } from '../../db/queries'
 import { formatFormula, resolveFormula, validateFormula } from '../../solver/formula'
 import type { Game, LogicalTx } from '../../solver/types'
 
-function parseWeight(value: string): number | null {
-  const parsed = Number(value)
-
-  if (!Number.isFinite(parsed) || parsed === 0) {
-    return null
-  }
-
-  return parsed
-}
-
-function normalizeMagnitudeInput(value: string): string | null {
-  const normalized = value.replace(',', '.')
-  return /^(\d+(\.\d*)?|\.\d*|)$/.test(normalized) ? normalized : null
-}
-
 export function AddTransactionSheet() {
   const { gameId } = useParams()
   const game = useGame(gameId)
@@ -38,7 +23,6 @@ export function AddTransactionSheet() {
 function AddTransactionSheetForm({ game }: { game: Game }) {
   const navigate = useNavigate()
   const [formula, setFormula] = useState('')
-  const [weight, setWeight] = useState('1')
   const [hard, setHard] = useState(false)
   const [note, setNote] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -59,12 +43,8 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
       return result.error
     }
 
-    if (!hard && parseWeight(weight) === null) {
-      return 'Weight must be a nonzero number.'
-    }
-
     return null
-  }, [formula, game.players, hard, weight])
+  }, [formula, game.players])
 
   async function handleSave(): Promise<void> {
     if (validationError !== null) {
@@ -73,7 +53,6 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
 
     const now = Date.now()
     const normalizedNote = note.trim()
-    const parsedWeight = hard ? 1 : parseWeight(weight)!
     const resolved = resolveFormula(formula.trim(), game.players)
     const formattedFormula = formatFormula(resolved.ast, resolved.playerMap)
 
@@ -84,7 +63,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
       createdAt: now,
       enabled: true,
       formula: formattedFormula,
-      weight: parsedWeight,
+      weight: 1,
       hard,
       note: normalizedNote === '' ? undefined : normalizedNote,
     }
@@ -121,41 +100,19 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
         </div>
 
         <div className="space-y-4">
-          <label className="flex flex-col gap-2 text-sm text-mist-300">
-            <span>Formula</span>
-            <input
-              aria-label="Formula"
-              className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 font-mono text-base text-mist-100"
-              type="text"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="e.g. Alice ^ Bob, ~Carol => (Al = Bob)"
-              value={formula}
-              onChange={(event) => setFormula(event.target.value)}
-            />
-          </label>
-
           <div className="flex items-end gap-2">
-            <label className={`flex min-w-0 flex-1 flex-col gap-2 text-sm text-mist-300 ${hard ? 'opacity-40' : ''}`}>
-              <span>Weight</span>
+            <label className="flex min-w-0 flex-1 flex-col gap-2 text-sm text-mist-300">
+              <span>Formula</span>
               <input
-                aria-label="Weight"
-                className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 text-base text-mist-100"
+                aria-label="Formula"
+                className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 font-mono text-base text-mist-100"
                 type="text"
-                inputMode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
-                disabled={hard}
-                value={weight}
-                onChange={(event) => {
-                  const normalized = normalizeMagnitudeInput(event.target.value)
-                  if (normalized !== null) {
-                    setWeight(normalized)
-                  }
-                }}
+                placeholder="e.g. Alice ^ Bob, ~Carol => (Al = Bob)"
+                value={formula}
+                onChange={(event) => setFormula(event.target.value)}
               />
             </label>
             <button

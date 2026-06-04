@@ -14,70 +14,6 @@ interface UndoState {
   tx: Transaction
 }
 
-function parseEditableWeight(value: string): number | null {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed === 0) return null
-  return parsed
-}
-
-interface WeightEditorProps {
-  weight: number
-  onCommit: (next: number) => void
-  disabled?: boolean
-}
-
-function WeightEditor({ weight, onCommit, disabled }: WeightEditorProps) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState('')
-
-  function start() {
-    if (disabled) return
-    setDraft(String(weight))
-    setEditing(true)
-  }
-
-  function commit() {
-    setEditing(false)
-    const parsed = parseEditableWeight(draft)
-    if (parsed !== null && parsed !== weight) {
-      onCommit(parsed)
-    }
-  }
-
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        aria-label="Edit weight"
-        className="inline w-16 rounded border border-mist-600 bg-mist-800 px-1 py-0 text-sm text-mist-100"
-        type="text"
-        inputMode="decimal"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur()
-          if (e.key === 'Escape') {
-            setEditing(false)
-          }
-        }}
-      />
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      title={disabled ? 'Hard constraint' : 'Tap to edit weight'}
-      className={`rounded px-0.5 text-mist-200 ${disabled ? '' : 'underline decoration-dotted underline-offset-2 hover:bg-mist-700'}`}
-      onClick={start}
-      disabled={disabled}
-    >
-      {formatSignedNumber(weight)}
-    </button>
-  )
-}
-
 interface NoteEditorProps {
   transaction: Transaction
   isEnabled: boolean
@@ -156,10 +92,9 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
 interface TransactionSummaryProps {
   transaction: Transaction
   isEnabled: boolean
-  onWeightCommit: (nextWeight: number) => void
 }
 
-function TransactionSummary({ transaction, isEnabled, onWeightCommit }: TransactionSummaryProps) {
+function TransactionSummary({ transaction, isEnabled }: TransactionSummaryProps) {
   const textClass = isEnabled ? 'text-mist-200' : 'line-through text-mist-500'
 
   return (
@@ -167,16 +102,12 @@ function TransactionSummary({ transaction, isEnabled, onWeightCommit }: Transact
       <span className="font-mono">{transaction.formula}</span>
       {transaction.hard ? (
         <span className="ml-2 rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">hard</span>
-      ) : (
-        <>
+      ) : transaction.weight !== 1 ? (
+        <span className="ml-1 text-mist-400">
           {', w = '}
-          <WeightEditor
-            weight={transaction.weight}
-            onCommit={onWeightCommit}
-            disabled={transaction.hard}
-          />
-        </>
-      )}
+          {formatSignedNumber(transaction.weight)}
+        </span>
+      ) : null}
     </div>
   )
 }
@@ -244,16 +175,6 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
         txs.map((transaction) => {
           const isEnabled = optimisticEnabled[transaction.id] ?? transaction.enabled
 
-          async function handleWeightCommit(nextWeight: number) {
-            try {
-              await saveTransaction({ ...transaction, weight: nextWeight })
-            } catch (saveError) {
-              setError(
-                saveError instanceof Error ? saveError.message : 'Failed to update weight.',
-              )
-            }
-          }
-
           return (
             <SwipeActionRow
               key={transaction.id}
@@ -266,7 +187,6 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                     <TransactionSummary
                       transaction={transaction}
                       isEnabled={isEnabled}
-                      onWeightCommit={(w) => void handleWeightCommit(w)}
                     />
                     <NoteEditor transaction={transaction} isEnabled={isEnabled} />
                   </div>

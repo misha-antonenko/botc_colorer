@@ -24,9 +24,6 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
 
   // Add a soft formula: Alice same color as Bob
   await page.getByRole('link', { name: 'Add transaction' }).click()
-  const weightInput = page.getByLabel('Weight')
-  await expect(weightInput).toHaveCSS('font-size', '16px')
-  await weightInput.fill('2')
   await page.getByLabel('Formula').fill('Al = Bob')
   await page.getByLabel('Note').fill('Clockmaker info')
   await page.getByRole('button', { name: 'Save transaction' }).click()
@@ -34,7 +31,6 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   // Add an implication: if Carol is blue then Alice differs from Bob
   await page.getByRole('link', { name: 'Add transaction' }).click()
   await page.getByLabel('Formula').fill('~C => (Al ^ Bob)')
-  await page.getByLabel('Weight').fill('2')
   await page.getByRole('button', { name: 'Save transaction' }).click()
 
   await page.getByRole('button', { name: 'Solutions' }).click()
