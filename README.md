@@ -46,7 +46,7 @@ Parentheses override precedence.
 
 - Vite + React + TypeScript
 - Tailwind CSS
-- Dexie / IndexedDB (schema version 3)
+- Dexie / IndexedDB
 - Zustand
 - Web Worker solver
 - `vite-plugin-pwa`
@@ -68,7 +68,7 @@ npm run build
 npm run test
 ```
 
-`npm test` runs type checking, Vitest unit tests (117 tests), and Playwright E2E tests.
+`npm test` runs type checking, Vitest unit tests, and Playwright E2E tests.
 
 ## GitHub Pages deployment
 
