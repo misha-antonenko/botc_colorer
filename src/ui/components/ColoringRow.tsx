@@ -5,11 +5,8 @@ import {
 } from '../../solver/solve'
 import type { Game, SolverResult, Transaction } from '../../solver/types'
 import {
-  formatConditionSummary,
-  formatEquationSummary,
   formatSignedNumber,
   getPlayerCellLabel,
-  getPlayerName,
 } from '../formatters'
 
 
@@ -79,57 +76,34 @@ export function ColoringRow({
 
       {expanded ? (
         <div className="border-t border-mist-800 px-4 py-4">
-          <div className="mb-3 text-sm font-semibold text-mist-100">Equation breakdown</div>
+          <div className="mb-3 text-sm font-semibold text-mist-100">Contribution breakdown</div>
           <div className="space-y-2">
-            {contributions.map((contribution) => (
+            {contributions.map((contribution, index) => (
               <div
-                key={contribution.id}
+                key={`${contribution.sourceTxId}:${index}`}
                 className="rounded-xl border border-mist-800 bg-mist-950/80 px-3 py-2 text-sm text-mist-200"
               >
-                {contribution.sourceKind === 'color' ? (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span>
-                        {getPlayerName(game, contribution.i)} is {contribution.fixedColor}
-                      </span>
-                      <span className="text-xs text-mist-400">hard constraint</span>
-                    </div>
-                    <div className="mt-1 text-xs text-mist-400">
-                      {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
-                      {(() => {
-                        const note = txMap.get(contribution.sourceTxId)?.note
-                        return note === undefined ? null : (
-                          <span className="block mt-0.5 italic text-mist-500">{note}</span>
-                        )
-                      })()}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span>
-                        {formatEquationSummary(game, contribution.i, contribution.j, contribution.weight)}
-                      </span>
-                      <span className="font-mono text-mist-300">
-                        {formatSignedNumber(contribution.contribution)}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs text-mist-400">
-                      {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
-                      {contribution.condition === undefined ? null : ' · ' + formatConditionSummary(
-                        game,
-                        contribution.condition.playerId,
-                        contribution.condition.color,
-                      )}
-                      {(() => {
-                        const note = txMap.get(contribution.sourceTxId)?.note
-                        return note === undefined ? null : (
-                          <span className="block mt-0.5 italic text-mist-500">{note}</span>
-                        )
-                      })()}
-                    </div>
-                  </>
-                )}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-mono">{contribution.formula}</span>
+                  {contribution.hard ? (
+                    <span className="rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">
+                      hard
+                    </span>
+                  ) : (
+                    <span className="font-mono text-mist-300">
+                      {formatSignedNumber(contribution.contribution)}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-xs text-mist-400">
+                  {contribution.satisfied ? 'satisfied' : 'unsatisfied'}
+                  {(() => {
+                    const note = txMap.get(contribution.sourceTxId)?.note
+                    return note === undefined ? null : (
+                      <span className="mt-0.5 block italic text-mist-500">{note}</span>
+                    )
+                  })()}
+                </div>
               </div>
             ))}
           </div>

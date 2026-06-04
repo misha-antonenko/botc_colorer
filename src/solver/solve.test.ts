@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { buildColoringContributionBreakdown, solveGame } from './solve'
-import { createColorTxFixture, createConditionalTxFixture, createDyadicTxFixture, createGameFixture, createPlayers } from '../test/fixtures'
+import { createGameFixture, createLogicalTxFixture, createPlayers } from '../test/fixtures'
 
 describe('solveGame', () => {
-  it('ranks a single dyadic transaction correctly', () => {
+  it('ranks same-color formula correctly', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const transaction = createDyadicTxFixture({
-      active: players[0].id,
-      passive: players[1].id,
+    const tx = createLogicalTxFixture({
+      formula: 'Al = Bob',
       weight: 1,
       gameId: game.id,
     })
 
-    const results = solveGame(game, [transaction])
+    const results = solveGame(game, [tx])
 
+    // same color (0b00=both blue, 0b11=both red) → +1; different → -1
     expect(results).toEqual([
       { c: 3, fitness: 1 },
       { c: 0, fitness: 1 },
@@ -23,76 +23,16 @@ describe('solveGame', () => {
     ])
   })
 
-  it('cancels opposing dyadic directions on the same pair', () => {
+  it('ranks different-color formula correctly', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const transactions = [
-      createDyadicTxFixture({
-        id: 'tx-1',
-        active: players[0].id,
-        passive: players[1].id,
-        weight: 1,
-        gameId: game.id,
-      }),
-      createDyadicTxFixture({
-        id: 'tx-2',
-        active: players[1].id,
-        passive: players[0].id,
-        weight: -1,
-        gameId: game.id,
-      }),
-    ]
-
-    const results = solveGame(game, transactions)
-
-    expect(results).toEqual([
-      { c: 3, fitness: 0 },
-      { c: 1, fitness: 0 },
-      { c: 2, fitness: 0 },
-      { c: 0, fitness: 0 },
-    ])
-  })
-
-  it('adds zero contribution when a conditional is unmet', () => {
-    const players = createPlayers(['Alice', 'Bob', 'Carol'])
-    const game = createGameFixture({ players })
-    const transaction = createConditionalTxFixture({
-      gameId: game.id,
-      condition: { playerId: players[0].id, color: 'blue' },
-      equations: [{ i: players[1].id, j: players[2].id, weight: 1 }],
-    })
-
-    const results = solveGame(game, [transaction])
-
-    expect(results.find((result) => result.c === 4)?.fitness).toBe(0)
-  })
-
-  it('adds the expected contribution when a conditional is met', () => {
-    const players = createPlayers(['Alice', 'Bob', 'Carol'])
-    const game = createGameFixture({ players })
-    const transaction = createConditionalTxFixture({
-      gameId: game.id,
-      condition: { playerId: players[0].id, color: 'blue' },
-      equations: [{ i: players[1].id, j: players[2].id, weight: 1 }],
-    })
-
-    const results = solveGame(game, [transaction])
-
-    expect(results.find((result) => result.c === 7)?.fitness).toBe(1)
-    expect(results.find((result) => result.c === 5)?.fitness).toBe(-1)
-  })
-
-  it('treats negative weights as inequality preferences', () => {
-    const players = createPlayers(['Alice', 'Bob'])
-    const game = createGameFixture({ players, blueCountMax: 2 })
-    const transaction = createDyadicTxFixture({
-      active: players[0].id,
-      passive: players[1].id,
-      weight: -1,
+    const tx = createLogicalTxFixture({
+      formula: 'Al ^ Bob',
+      weight: 1,
       gameId: game.id,
     })
 
-    const results = solveGame(game, [transaction])
+    const results = solveGame(game, [tx])
 
     expect(results).toEqual([
       { c: 1, fitness: 1 },
@@ -102,81 +42,78 @@ describe('solveGame', () => {
     ])
   })
 
-  it('prunes fixed colors from color transactions', () => {
+  it('soft formulas cancel when weights oppose', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const colorTx = createColorTxFixture({
-      gameId: game.id,
-      playerId: players[0].id,
-      color: 'blue',
-    })
+    const txs = [
+      createLogicalTxFixture({
+        id: 'tx-1',
+        formula: 'Al = Bob',
+        weight: 1,
+        gameId: game.id,
+      }),
+      createLogicalTxFixture({
+        id: 'tx-2',
+        formula: 'Al ^ Bob',
+        weight: 1,
+        gameId: game.id,
+      }),
+    ]
 
-    const results = solveGame(game, [colorTx])
+    const results = solveGame(game, txs)
 
-    expect(results).toEqual([
-      { c: 3, fitness: 0 },
-      { c: 1, fitness: 0 },
-    ])
+    expect(results.every((r) => r.fitness === 0)).toBe(true)
   })
 
-  it('prunes fixed red from color transactions', () => {
+  it('hard constraint prunes colorings', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const colorTx = createColorTxFixture({
+    // Alice is blue → ~Alice (NOT red)
+    const tx = createLogicalTxFixture({
+      formula: '~Alice',
+      hard: true,
       gameId: game.id,
-      playerId: players[0].id,
-      color: 'red',
     })
 
-    const results = solveGame(game, [colorTx])
+    const results = solveGame(game, [tx])
 
-    expect(results).toEqual([
-      { c: 2, fitness: 0 },
-      { c: 0, fitness: 0 },
-    ])
+    // Only colorings where Alice is blue (bit 0 = 0): 0b00 and 0b10
+    expect(results.map((r) => r.c).sort()).toEqual([0, 2])
   })
 
-  it('uses the latest color transaction when multiple target the same player', () => {
+  it('hard constraint for red prunes correctly', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const olderTx = createColorTxFixture({
-      id: 'tx-older',
+    const tx = createLogicalTxFixture({
+      formula: 'Alice',
+      hard: true,
       gameId: game.id,
-      playerId: players[0].id,
-      color: 'red',
-      createdAt: 100,
-    })
-    const newerTx = createColorTxFixture({
-      id: 'tx-newer',
-      gameId: game.id,
-      playerId: players[0].id,
-      color: 'blue',
-      createdAt: 200,
     })
 
-    // Newer says blue — only colorings with Alice blue should survive.
-    const results = solveGame(game, [olderTx, newerTx])
+    const results = solveGame(game, [tx])
 
-    expect(results).toEqual([
-      { c: 3, fitness: 0 },
-      { c: 1, fitness: 0 },
-    ])
+    // Only colorings where Alice is red (bit 0 = 1): 0b01 and 0b11
+    expect(results.map((r) => r.c).sort()).toEqual([1, 3])
   })
 
-  it('ignores disabled color transactions', () => {
-    const players = createPlayers(['Alice', 'Bob'])
-    const game = createGameFixture({ players, blueCountMax: 2 })
-    const colorTx = createColorTxFixture({
+  it('implication formula works', () => {
+    const players = createPlayers(['Alice', 'Bob', 'Carol'])
+    const game = createGameFixture({ players })
+    // If Alice is blue, then Bob = Carol (same color)
+    // ~Alice => (Bob = Carol)
+    const tx = createLogicalTxFixture({
+      formula: '~Al => (Bob = C)',
+      weight: 1,
       gameId: game.id,
-      playerId: players[0].id,
-      color: 'blue',
-      enabled: false,
     })
 
-    // Disabled — all 4 colorings survive.
-    const results = solveGame(game, [colorTx])
+    const results = solveGame(game, [tx])
 
-    expect(results).toHaveLength(4)
+    // When Alice is red (bit0=1), formula is vacuously true → +1
+    // When Alice is blue (bit0=0), formula depends on Bob = Carol
+    //   Bob=Carol → +1, Bob!=Carol → -1
+    const aliceRedResults = results.filter((r) => (r.c & 1) === 1)
+    expect(aliceRedResults.every((r) => r.fitness === 1)).toBe(true)
   })
 
   it('prunes by the blue range', () => {
@@ -192,28 +129,27 @@ describe('solveGame', () => {
     expect(results.map((result) => result.c)).toEqual([1, 2, 4])
   })
 
-  it('sums fractional weights exactly in deterministic cases', () => {
-    const players = createPlayers(['Alice', 'Bob', 'Carol'])
-    const game = createGameFixture({ players })
-    const transactions = [
-      createDyadicTxFixture({
+  it('sums fractional weights', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const txs = [
+      createLogicalTxFixture({
         id: 'tx-1',
-        active: players[0].id,
-        passive: players[1].id,
+        formula: 'Al = Bob',
         weight: 0.5,
         gameId: game.id,
       }),
-      createConditionalTxFixture({
+      createLogicalTxFixture({
         id: 'tx-2',
+        formula: 'Al = Bob',
+        weight: 0.25,
         gameId: game.id,
-        condition: { playerId: players[2].id, color: 'blue' },
-        equations: [{ i: players[0].id, j: players[1].id, weight: 0.25 }],
       }),
     ]
 
-    const results = solveGame(game, transactions)
+    const results = solveGame(game, txs)
 
-    expect(results.find((result) => result.c === 7)?.fitness).toBe(0.75)
+    expect(results.find((r) => r.c === 0)?.fitness).toBe(0.75)
   })
 
   it('uses the documented lexicographic tiebreaker', () => {
@@ -224,109 +160,92 @@ describe('solveGame', () => {
 
     expect(results.map((result) => result.c)).toEqual([3, 1, 2, 0])
   })
-})
 
-describe('buildColoringContributionBreakdown (color kind)', () => {
-  it('emits a satisfied hard-constraint entry when the coloring matches the fixed color', () => {
+  it('ignores disabled transactions', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const colorTx = createColorTxFixture({
-      id: 'tx-color',
+    const tx = createLogicalTxFixture({
+      formula: '~Alice',
+      hard: true,
+      enabled: false,
       gameId: game.id,
-      playerId: players[0].id,
-      color: 'blue',
     })
 
-    // coloring 1 = Alice blue, Bob red
-    const breakdown = buildColoringContributionBreakdown(game, [colorTx], 1)
+    const results = solveGame(game, [tx])
 
-    expect(breakdown).toEqual([
-      expect.objectContaining({
-        sourceKind: 'color',
-        i: players[0].id,
-        fixedColor: 'blue',
-        contribution: 0,
-        satisfied: true,
-      }),
-    ])
+    expect(results).toHaveLength(4)
   })
 
-  it('emits an unsatisfied entry when the coloring violates the fixed color', () => {
+  it('combines hard and soft constraints', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const colorTx = createColorTxFixture({
-      id: 'tx-color',
+    const hardTx = createLogicalTxFixture({
+      id: 'hard',
+      formula: '~Alice',
+      hard: true,
       gameId: game.id,
-      playerId: players[0].id,
-      color: 'red',
+    })
+    const softTx = createLogicalTxFixture({
+      id: 'soft',
+      formula: 'Bob',
+      weight: 2,
+      gameId: game.id,
     })
 
-    // coloring 1 = Alice blue — violates the red constraint
-    const breakdown = buildColoringContributionBreakdown(game, [colorTx], 1)
+    const results = solveGame(game, [hardTx, softTx])
 
-    expect(breakdown).toEqual([
-      expect.objectContaining({
-        sourceKind: 'color',
-        satisfied: false,
-        contribution: 0,
-      }),
+    // Alice must be blue → only c=0 (both blue) and c=2 (Bob red)
+    // c=2: Bob is red → satisfied → +2
+    // c=0: Bob is blue → unsatisfied → -2
+    expect(results).toEqual([
+      { c: 2, fitness: 2 },
+      { c: 0, fitness: -2 },
     ])
   })
 })
 
 describe('buildColoringContributionBreakdown', () => {
-  it('marks negative dyadic equations satisfied only when colors differ', () => {
+  it('shows hard constraint as satisfied with zero contribution', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players, blueCountMax: 2 })
-    const transaction = createDyadicTxFixture({
-      id: 'tx-negative-dyadic',
-      active: players[0].id,
-      passive: players[1].id,
-      weight: -1,
+    const tx = createLogicalTxFixture({
+      id: 'tx-hard',
+      formula: '~Alice',
+      hard: true,
       gameId: game.id,
     })
 
-    const satisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 1)
-    const unsatisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 3)
+    // coloring 0 = both blue, Alice is blue → satisfied
+    const breakdown = buildColoringContributionBreakdown(game, [tx], 0)
 
-    expect(satisfiedBreakdown).toEqual([
+    expect(breakdown).toEqual([
       expect.objectContaining({
+        sourceTxId: 'tx-hard',
+        hard: true,
         satisfied: true,
-        contribution: 1,
-      }),
-    ])
-    expect(unsatisfiedBreakdown).toEqual([
-      expect.objectContaining({
-        satisfied: false,
-        contribution: -1,
+        contribution: 0,
       }),
     ])
   })
 
-  it('marks negative conditional equations satisfied only when colors differ', () => {
-    const players = createPlayers(['Alice', 'Bob', 'Carol'])
-    const game = createGameFixture({ players })
-    const transaction = createConditionalTxFixture({
-      id: 'tx-negative-conditional',
+  it('shows soft constraint contribution', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players, blueCountMax: 2 })
+    const tx = createLogicalTxFixture({
+      id: 'tx-soft',
+      formula: 'Al ^ Bob',
+      weight: 3,
       gameId: game.id,
-      condition: { playerId: players[0].id, color: 'blue' },
-      equations: [{ i: players[1].id, j: players[2].id, weight: -2 }],
     })
 
-    const satisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 5)
-    const unsatisfiedBreakdown = buildColoringContributionBreakdown(game, [transaction], 7)
+    // coloring 1 = Alice red, Bob blue → different → satisfied
+    const satisfied = buildColoringContributionBreakdown(game, [tx], 1)
+    expect(satisfied[0].contribution).toBe(3)
+    expect(satisfied[0].satisfied).toBe(true)
 
-    expect(satisfiedBreakdown).toEqual([
-      expect.objectContaining({
-        satisfied: true,
-        contribution: 2,
-      }),
-    ])
-    expect(unsatisfiedBreakdown).toEqual([
-      expect.objectContaining({
-        satisfied: false,
-        contribution: -2,
-      }),
-    ])
+    // coloring 3 = both red → same → unsatisfied
+    const unsatisfied = buildColoringContributionBreakdown(game, [tx], 3)
+    expect(unsatisfied[0].contribution).toBe(-3)
+    expect(unsatisfied[0].satisfied).toBe(false)
   })
 })

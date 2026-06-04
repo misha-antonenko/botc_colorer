@@ -3,13 +3,7 @@
  * schema. All migration logic lives here so each version transition has a
  * single implementation.
  *
- * Portable payload: applyMigrations() walks the chain from the detected
- * version to CURRENT_VERSION before Zod parsing.
- *
- * IndexedDB: the Dexie schema upgrade in schema.ts calls
- * buildColorTxesFromPlayers() directly, sharing the same core logic.
- *
- * To add a future migration (N → M):
+ * To add a future migration (N -> M):
  *   1. Bump CURRENT_VERSION to M.
  *   2. Update PortablePayload.version in types.ts to match.
  *   3. Add typed raw shapes for the v-N data (only fields the migration reads).
@@ -18,20 +12,19 @@
  *   5. Write migrateVNtoVM() and append { from: N, apply: migrateVNtoVM }
  *      to MIGRATIONS.
  *   6. Add this.version(M).upgrade(...) in schema.ts calling the shared helper.
- *   7. Add tests: unit-test the shared helper, integration-test the Dexie
- *      upgrade in schema.test.ts using an isolated IDBFactory.
+ *   7. Add tests.
  */
 
-import type { ColorTx } from '../solver/types'
+import type { LogicalTx } from '../solver/types'
 
-export const CURRENT_VERSION = 2
+export const CURRENT_VERSION = 3
 
 interface MigrationStep {
   from: number
   apply: (raw: Record<string, unknown>) => Record<string, unknown>
 }
 
-// ── v1 raw shapes (only the fields each migration needs) ──────────────────────
+// -- v1 raw shapes ------------------------------------------------------------
 
 export interface V1Player {
   id: string
@@ -51,21 +44,78 @@ interface V1Payload {
   transactions: Record<string, unknown>[]
 }
 
-// ── Shared migration helpers ──────────────────────────────────────────────────
+// -- v2 raw shapes ------------------------------------------------------------
 
-/**
- * Converts each player with a non-null fixedColor into a ColorTx. Used by
- * both the portable-payload migration and the IndexedDB schema upgrade so the
- * logic is defined exactly once.
- */
+interface V2Equation {
+  i: string
+  j: string
+  weight: number
+}
+
+interface V2DyadicTx {
+  kind: 'dyadic'
+  id: string
+  gameId: string
+  createdAt: number
+  enabled: boolean
+  note?: string
+  active: string
+  passive: string
+  weight: number
+}
+
+interface V2ColorTx {
+  kind: 'color'
+  id: string
+  gameId: string
+  createdAt: number
+  enabled: boolean
+  note?: string
+  playerId: string
+  color: 'blue' | 'red'
+}
+
+interface V2ConditionalTx {
+  kind: 'conditional'
+  id: string
+  gameId: string
+  createdAt: number
+  enabled: boolean
+  note?: string
+  condition: { playerId: string; color: 'blue' | 'red' }
+  equations: V2Equation[]
+}
+
+type V2Transaction = V2DyadicTx | V2ColorTx | V2ConditionalTx
+
+interface V2Player {
+  id: string
+  name: string
+}
+
+interface V2Game {
+  id: string
+  players: V2Player[]
+}
+
+interface V2Payload {
+  version: 2
+  exportedAt: number
+  games: V2Game[]
+  transactions: V2Transaction[]
+}
+
+// -- Shared migration helpers -------------------------------------------------
+
 export function buildColorTxesFromPlayers(
   gameId: string,
   updatedAt: number,
   players: ReadonlyArray<V1Player>,
-): ColorTx[] {
+): V2ColorTx[] {
   return players
-    .filter((player): player is V1Player & { fixedColor: 'blue' | 'red' } =>
-      player.fixedColor !== null,
+    .filter(
+      (player): player is V1Player & { fixedColor: 'blue' | 'red' } =>
+        player.fixedColor !== null,
     )
     .map((player) => ({
       id: crypto.randomUUID(),
@@ -78,7 +128,76 @@ export function buildColorTxesFromPlayers(
     }))
 }
 
-// ── Migrations ────────────────────────────────────────────────────────────────
+function getPlayerNameById(games: V2Game[], gameId: string, playerId: string): string {
+  const game = games.find((g) => g.id === gameId)
+  if (game === undefined) return playerId
+  const player = game.players.find((p) => p.id === playerId)
+  return player?.name ?? playerId
+}
+
+export function convertV2TxToLogical(
+  tx: V2Transaction,
+  games: V2Game[],
+): LogicalTx[] {
+  const base = {
+    gameId: tx.gameId,
+    createdAt: tx.createdAt,
+    enabled: tx.enabled,
+    note: tx.note,
+  }
+
+  if (tx.kind === 'dyadic') {
+    const activeName = getPlayerNameById(games, tx.gameId, tx.active)
+    const passiveName = getPlayerNameById(games, tx.gameId, tx.passive)
+    const operator = tx.weight > 0 ? '=' : '^'
+    return [
+      {
+        ...base,
+        id: tx.id,
+        kind: 'logical',
+        formula: `${activeName} ${operator} ${passiveName}`,
+        weight: Math.abs(tx.weight),
+        hard: false,
+      },
+    ]
+  }
+
+  if (tx.kind === 'color') {
+    const playerName = getPlayerNameById(games, tx.gameId, tx.playerId)
+    const formula = tx.color === 'blue' ? `~${playerName}` : playerName
+    return [
+      {
+        ...base,
+        id: tx.id,
+        kind: 'logical',
+        formula,
+        weight: 1,
+        hard: true,
+      },
+    ]
+  }
+
+  // Conditional: one logical tx per equation
+  const condPlayerName = getPlayerNameById(games, tx.gameId, tx.condition.playerId)
+  const condFormula = tx.condition.color === 'blue' ? `~${condPlayerName}` : condPlayerName
+
+  return tx.equations.map((eq, index) => {
+    const iName = getPlayerNameById(games, tx.gameId, eq.i)
+    const jName = getPlayerNameById(games, tx.gameId, eq.j)
+    const eqOperator = eq.weight > 0 ? '=' : '^'
+    const eqFormula = `${iName} ${eqOperator} ${jName}`
+    return {
+      ...base,
+      id: index === 0 ? tx.id : crypto.randomUUID(),
+      kind: 'logical' as const,
+      formula: `${condFormula} => (${eqFormula})`,
+      weight: Math.abs(eq.weight),
+      hard: false,
+    }
+  })
+}
+
+// -- Migrations ---------------------------------------------------------------
 
 function migrateV1ToV2(raw: Record<string, unknown>): Record<string, unknown> {
   const payload = raw as unknown as V1Payload
@@ -100,16 +219,29 @@ function migrateV1ToV2(raw: Record<string, unknown>): Record<string, unknown> {
   }
 }
 
+function migrateV2ToV3(raw: Record<string, unknown>): Record<string, unknown> {
+  const payload = raw as unknown as V2Payload
+  const logicalTxs: Record<string, unknown>[] = []
+
+  for (const tx of payload.transactions) {
+    const converted = convertV2TxToLogical(tx, payload.games)
+    logicalTxs.push(...(converted as unknown as Record<string, unknown>[]))
+  }
+
+  return {
+    ...payload,
+    version: 3,
+    transactions: logicalTxs,
+  }
+}
+
 const MIGRATIONS: MigrationStep[] = [
   { from: 1, apply: migrateV1ToV2 },
+  { from: 2, apply: migrateV2ToV3 },
 ]
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// -- Public API ---------------------------------------------------------------
 
-/**
- * Applies all pending migrations to a raw portable payload object, bringing it
- * up to CURRENT_VERSION. Throws if no migration exists for the detected version.
- */
 export function applyMigrations(raw: unknown): unknown {
   if (typeof raw !== 'object' || raw === null) {
     return raw

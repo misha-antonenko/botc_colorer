@@ -1,6 +1,5 @@
 import type { Game, Transaction } from '../../../solver/types'
 import { summarizeTransaction } from '../../formatters'
-import { FMatrix } from '../../components/FMatrix'
 
 interface StateTabProps {
   game: Game
@@ -8,42 +7,64 @@ interface StateTabProps {
 }
 
 export function StateTab({ game, txs }: StateTabProps) {
-  const conditionalTransactions = txs.filter(
-    (transaction) => transaction.enabled && transaction.kind === 'conditional',
-  )
+  const enabledTxs = txs.filter((tx) => tx.enabled)
+  const hardTxs = enabledTxs.filter((tx) => tx.hard)
+  const softTxs = enabledTxs.filter((tx) => !tx.hard)
 
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border border-mist-800 bg-mist-950/80 p-4 shadow-lg shadow-mist-950/30">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-mist-100">Interaction matrix</h2>
+          <h2 className="text-lg font-semibold text-mist-100">Hard constraints</h2>
           <p className="text-sm text-mist-400">
-            Dyadic weights with conditional contribution ranges.
+            Formulas that must be satisfied. Violating colorings are pruned.
           </p>
         </div>
-        <FMatrix game={game} txs={txs} />
+
+        {hardTxs.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-mist-700 px-4 py-6 text-sm text-mist-400">
+            No hard constraints.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {hardTxs.map((tx) => (
+              <div
+                key={tx.id}
+                className="rounded-2xl border border-mist-800 bg-mist-900/70 px-3 py-3 font-mono text-sm text-mist-200"
+              >
+                {tx.formula}
+                {tx.note !== undefined && (
+                  <div className="mt-1 font-sans text-xs italic text-mist-500">{tx.note}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rounded-3xl border border-mist-800 bg-mist-950/80 p-4 shadow-lg shadow-mist-950/30">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-mist-100">Conditional transactions</h2>
+          <h2 className="text-lg font-semibold text-mist-100">Soft constraints</h2>
           <p className="text-sm text-mist-400">
-            Enabled conditional transactions that feed the bracketed ranges in the matrix.
+            Weighted formulas that contribute to the fitness score.
           </p>
         </div>
 
-        {conditionalTransactions.length === 0 ? (
+        {softTxs.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-mist-700 px-4 py-6 text-sm text-mist-400">
-            No enabled conditional transactions.
+            No soft constraints.
           </div>
         ) : (
           <div className="space-y-2">
-            {conditionalTransactions.map((transaction) => (
+            {softTxs.map((tx) => (
               <div
-                key={transaction.id}
+                key={tx.id}
                 className="rounded-2xl border border-mist-800 bg-mist-900/70 px-3 py-3 text-sm text-mist-200"
               >
-                {summarizeTransaction(game, transaction)}
+                {summarizeTransaction(game, tx)}
+                {tx.note !== undefined && (
+                  <div className="mt-1 text-xs italic text-mist-500">{tx.note}</div>
+                )}
               </div>
             ))}
           </div>

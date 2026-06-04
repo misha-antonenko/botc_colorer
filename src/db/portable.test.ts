@@ -6,9 +6,8 @@ import {
 } from './portable'
 import { db, encodeGameRow, encodeTransactionRow } from './schema'
 import {
-  createConditionalTxFixture,
-  createDyadicTxFixture,
   createGameFixture,
+  createLogicalTxFixture,
   createPlayers,
 } from '../test/fixtures'
 
@@ -17,18 +16,17 @@ describe('portable payloads', () => {
     const players = createPlayers(['Alice', 'Bob', 'Carol'])
     const game = createGameFixture({ players, blueCountMin: 1, blueCountMax: 2 })
     const transactions = [
-      createDyadicTxFixture({
+      createLogicalTxFixture({
         id: 'tx-1',
         gameId: game.id,
-        active: players[0].id,
-        passive: players[1].id,
+        formula: 'Al = Bob',
         weight: 1,
       }),
-      createConditionalTxFixture({
+      createLogicalTxFixture({
         id: 'tx-2',
         gameId: game.id,
-        condition: { playerId: players[2].id, color: 'blue' },
-        equations: [{ i: players[0].id, j: players[1].id, weight: -0.5 }],
+        formula: '~C => (Al ^ Bob)',
+        weight: 0.5,
       }),
     ]
 
@@ -73,7 +71,7 @@ describe('portable payloads', () => {
 
     await shareOrDownloadPortablePayload(
       {
-        version: 2,
+        version: 3,
         exportedAt: 123,
         games: [],
         transactions: [],

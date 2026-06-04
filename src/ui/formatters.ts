@@ -1,4 +1,4 @@
-import type { Color, Game, PlayerId, Transaction } from '../solver/types'
+import type { Game, PlayerId, Transaction } from '../solver/types'
 
 function trimTrailingZeros(value: number): string {
   if (Number.isInteger(value)) {
@@ -62,37 +62,9 @@ export function getPlayerCellLabel(name: string): string {
   return trimmedName.slice(0, 3)
 }
 
-export function formatEquationSummary(
-  game: Game,
-  i: PlayerId,
-  j: PlayerId,
-  weight: number,
-): string {
-  const relation = weight > 0 ? '=' : '≠'
-  return `${getPlayerName(game, i)} ${relation} ${getPlayerName(game, j)}, w = ${formatMagnitude(weight)}`
-}
-
-export function formatConditionSummary(game: Game, playerId: PlayerId, color: Color): string {
-  return `if ${getPlayerName(game, playerId)} is ${color}`
-}
-
-export function summarizeTransaction(game: Game, transaction: Transaction): string {
-  if (transaction.kind === 'dyadic') {
-    return `${getPlayerName(game, transaction.active)} → ${getPlayerName(
-      game,
-      transaction.passive,
-    )}, w = ${formatSignedNumber(transaction.weight)}`
-  }
-
-  if (transaction.kind === 'color') {
-    return `${getPlayerName(game, transaction.playerId)} is ${transaction.color}`
-  }
-
-  const equationSummary = transaction.equations
-    .map((equation) => formatEquationSummary(game, equation.i, equation.j, equation.weight))
-    .join('; ')
-
-  return `${formatConditionSummary(game, transaction.condition.playerId, transaction.condition.color)}: ${equationSummary}`
+export function summarizeTransaction(_game: Game, transaction: Transaction): string {
+  const hardTag = transaction.hard ? ' [hard]' : ''
+  return `${transaction.formula}, w = ${formatSignedNumber(transaction.weight)}${hardTag}`
 }
 
 export function formatTimestamp(timestamp: number): string {

@@ -17,6 +17,13 @@ import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 import { saveGame } from '../../../db/queries'
 import { shiftBlueRangeWithPlayerCount } from '../../../solver/blueRange'
+import {
+  extractVariables,
+  parseFormula,
+  resolvePlayerPrefix,
+  wouldPlayerMakeFormulasAmbiguous,
+  wouldRenameMakeFormulasAmbiguous,
+} from '../../../solver/formula'
 import type { Game, Player, Transaction } from '../../../solver/types'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
 
@@ -166,30 +173,30 @@ export function SetupTab({ game, txs }: SetupTabProps) {
   )
   const blueRangeError = validateBlueRange(draft)
   const playerCount = draft.players.length
+  const formulas = useMemo(() => txs.map((tx) => tx.formula), [txs])
+  const [addPlayerError, setAddPlayerError] = useState<string | null>(null)
+  const [renameError, setRenameError] = useState<string | null>(null)
+
   const referencedPlayerIds = useMemo(() => {
     const ids = new Set<string>()
 
-    for (const transaction of txs) {
-      if (transaction.kind === 'dyadic') {
-        ids.add(transaction.active)
-        ids.add(transaction.passive)
-        continue
+    for (const tx of txs) {
+      try {
+        const ast = parseFormula(tx.formula)
+        const vars = extractVariables(ast)
+        for (const varName of vars) {
+          const result = resolvePlayerPrefix(varName, draft.players)
+          if (result.ok) {
+            ids.add(result.player.id)
+          }
+        }
+      } catch {
+        // skip unparseable formulas
       }
-
-      if (transaction.kind === 'color') {
-        ids.add(transaction.playerId)
-        continue
-      }
-
-      ids.add(transaction.condition.playerId)
-      transaction.equations.forEach((equation) => {
-        ids.add(equation.i)
-        ids.add(equation.j)
-      })
     }
 
     return ids
-  }, [txs])
+  }, [txs, draft.players])
 
   function persist(nextGame: Game, nextBlueCountInputs = blueCountInputs): void {
     setDraft(nextGame)
@@ -383,13 +390,17 @@ export function SetupTab({ game, txs }: SetupTabProps) {
             className="rounded-full border border-mist-700 px-4 py-2 text-sm text-mist-200 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={draft.players.length >= 16}
             onClick={() => {
-              const nextPlayers = [
-                ...draft.players,
-                {
-                  id: crypto.randomUUID(),
-                  name: `Player ${draft.players.length + 1}`,
-                },
-              ]
+              const newPlayer: Player = {
+                id: crypto.randomUUID(),
+                name: `Player ${draft.players.length + 1}`,
+              }
+              const ambiguityError = wouldPlayerMakeFormulasAmbiguous(formulas, draft.players, newPlayer)
+              if (ambiguityError !== null) {
+                setAddPlayerError(ambiguityError)
+                return
+              }
+              setAddPlayerError(null)
+              const nextPlayers = [...draft.players, newPlayer]
               persistWithShiftedBlueRange(nextPlayers)
             }}
           >
@@ -418,14 +429,22 @@ export function SetupTab({ game, txs }: SetupTabProps) {
                     player={player}
                     index={index}
                     cannotRemove={cannotRemove}
-                    onNameChange={(name) =>
+                    onNameChange={(name) => {
+                      const error = wouldRenameMakeFormulasAmbiguous(
+                        formulas,
+                        draft.players,
+                        player.id,
+                        name,
+                      )
+                      setRenameError(error)
+                      if (error !== null) return
                       updateDraft((currentDraft) => ({
                         ...currentDraft,
                         players: currentDraft.players.map((currentPlayer, currentIndex) =>
                           currentIndex === index ? { ...currentPlayer, name } : currentPlayer,
                         ),
                       }))
-                    }
+                    }}
                     onRemove={() => {
                       const nextPlayers = draft.players.filter(
                         (_, currentIndex) => currentIndex !== index,
@@ -440,6 +459,16 @@ export function SetupTab({ game, txs }: SetupTabProps) {
         </DndContext>
       </section>
 
+      {addPlayerError === null ? null : (
+        <div className="rounded-2xl border border-amber-700 bg-amber-900/30 px-4 py-3 text-sm text-amber-200">
+          {addPlayerError}
+        </div>
+      )}
+      {renameError === null ? null : (
+        <div className="rounded-2xl border border-amber-700 bg-amber-900/30 px-4 py-3 text-sm text-amber-200">
+          {renameError}
+        </div>
+      )}
       {saveError === null ? null : (
         <div className="rounded-2xl border border-mist-700 bg-mist-900/80 px-4 py-3 text-sm text-mist-200">
           {saveError}

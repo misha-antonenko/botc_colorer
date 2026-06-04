@@ -1,45 +1,22 @@
+import { compileAst, type CompiledFormula, resolveFormula } from './formula'
 import type {
-  ColoringContribution,
   Color,
-  ColorTx,
-  ConditionalTx,
+  ColoringContribution,
   Game,
   PlayerId,
   SolverResult,
   Transaction,
 } from './types'
 
-interface PreparedDyadicPair {
-  i: number
-  j: number
-  weight: number
-}
-
-interface PreparedConditional {
-  tx: ConditionalTx
-  conditionIndex: number
-  want: 0 | 1
-  equations: Array<{
-    i: number
-    j: number
-    weight: number
-  }>
+interface PreparedTx {
+  tx: Transaction
+  evaluate: CompiledFormula
 }
 
 const EMPTY_RESULTS: SolverResult[] = []
 
 function buildPositionMap(game: Game): Map<PlayerId, number> {
   return new Map(game.players.map((player, index) => [player.id, index]))
-}
-
-function getPlayerIndex(positions: Map<PlayerId, number>, playerId: PlayerId): number {
-  const position = positions.get(playerId)
-
-  if (position === undefined) {
-    throw new Error(`Unknown player id: ${playerId}`)
-  }
-
-  return position
 }
 
 function countBits(value: number): number {
@@ -69,122 +46,24 @@ function getLexKey(coloring: number, playerCount: number): number {
   return key
 }
 
-function sameColor(coloring: number, i: number, j: number): boolean {
-  return isBlueAt(coloring, i) === isBlueAt(coloring, j)
-}
-
-function isEquationSatisfied(coloring: number, i: number, j: number, weight: number): boolean {
-  const hasSameColor = sameColor(coloring, i, j)
-  return weight > 0 ? hasSameColor : !hasSameColor
-}
-
-function getEquationContribution(coloring: number, i: number, j: number, weight: number): number {
-  return isEquationSatisfied(coloring, i, j, weight) ? Math.abs(weight) : -Math.abs(weight)
-}
-
-function normalizeEquationWeight(weight: number): number {
-  if (!Number.isFinite(weight) || weight === 0) {
-    throw new Error('Equation weights must be finite and nonzero')
-  }
-
-  return weight
-}
-
-function buildPreparedDyadicPairs(game: Game, txs: Transaction[]): PreparedDyadicPair[] {
+function prepareTx(tx: Transaction, game: Game): PreparedTx {
   const positions = buildPositionMap(game)
-  const pairWeights = new Map<string, number>()
+  const resolved = resolveFormula(tx.formula, game.players)
 
-  for (const tx of txs) {
-    if (!tx.enabled || tx.kind !== 'dyadic') {
-      continue
+  function getPlayerIndex(varName: string): number {
+    const player = resolved.playerMap.get(varName)
+    if (player === undefined) {
+      throw new Error(`Unresolved variable '${varName}' in formula '${tx.formula}'`)
     }
-
-    const activeIndex = getPlayerIndex(positions, tx.active)
-    const passiveIndex = getPlayerIndex(positions, tx.passive)
-
-    if (activeIndex === passiveIndex) {
-      throw new Error('Dyadic transactions cannot be self-referential')
+    const pos = positions.get(player.id)
+    if (pos === undefined) {
+      throw new Error(`Player '${player.name}' not found in game`)
     }
-
-    const lo = Math.min(activeIndex, passiveIndex)
-    const hi = Math.max(activeIndex, passiveIndex)
-    const key = `${lo}:${hi}`
-    const nextWeight = (pairWeights.get(key) ?? 0) + normalizeEquationWeight(tx.weight)
-    pairWeights.set(key, nextWeight)
+    return pos
   }
 
-  return [...pairWeights.entries()]
-    .filter(([, weight]) => weight !== 0)
-    .map(([key, weight]) => {
-      const [i, j] = key.split(':').map(Number)
-      return { i, j, weight }
-    })
-}
-
-function buildPreparedConditionals(game: Game, txs: Transaction[]): PreparedConditional[] {
-  const positions = buildPositionMap(game)
-
-  return txs
-    .filter((tx): tx is ConditionalTx => tx.enabled && tx.kind === 'conditional')
-    .map((tx) => ({
-      tx,
-      conditionIndex: getPlayerIndex(positions, tx.condition.playerId),
-      want: tx.condition.color === 'blue' ? 1 : 0,
-      equations: tx.equations.map((equation) => {
-        const i = getPlayerIndex(positions, equation.i)
-        const j = getPlayerIndex(positions, equation.j)
-
-        if (i === j) {
-          throw new Error('Conditional equations cannot be self-referential')
-        }
-
-        return {
-          i,
-          j,
-          weight: normalizeEquationWeight(equation.weight),
-        }
-      }),
-    }))
-}
-
-function buildFixedColorMasks(
-  game: Game,
-  txs: Transaction[],
-): { mustBeBlue: number; mustBeRed: number } {
-  const positions = buildPositionMap(game)
-  // Latest enabled ColorTx per player wins.
-  const latestColorTx = new Map<PlayerId, ColorTx>()
-
-  for (const tx of txs) {
-    if (!tx.enabled || tx.kind !== 'color') {
-      continue
-    }
-
-    const existing = latestColorTx.get(tx.playerId)
-
-    if (existing === undefined || tx.createdAt > existing.createdAt) {
-      latestColorTx.set(tx.playerId, tx)
-    }
-  }
-
-  let mustBeBlue = 0
-  let mustBeRed = 0
-
-  for (const [playerId, tx] of latestColorTx) {
-    const index = positions.get(playerId)
-
-    if (index === undefined) {
-      continue
-    }
-
-    if (tx.color === 'blue') {
-      mustBeBlue |= 1 << index
-    } else {
-      mustBeRed |= 1 << index
-    }
-  }
-
-  return { mustBeBlue, mustBeRed }
+  const evaluate = compileAst(resolved.ast, getPlayerIndex)
+  return { tx, evaluate }
 }
 
 export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
@@ -198,9 +77,11 @@ export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
     throw new Error('The solver supports at most 16 players')
   }
 
-  const dyadicPairs = buildPreparedDyadicPairs(game, txs)
-  const conditionals = buildPreparedConditionals(game, txs)
-  const { mustBeBlue, mustBeRed } = buildFixedColorMasks(game, txs)
+  const enabledTxs = txs.filter((tx) => tx.enabled)
+  const prepared = enabledTxs.map((tx) => prepareTx(tx, game))
+  const hardTxs = prepared.filter((p) => p.tx.hard)
+  const softTxs = prepared.filter((p) => !p.tx.hard)
+
   const results: SolverResult[] = []
   const upperBound = 1 << playerCount
 
@@ -211,28 +92,19 @@ export function solveGame(game: Game, txs: Transaction[]): SolverResult[] {
       continue
     }
 
-    if ((coloring & mustBeBlue) !== mustBeBlue) {
-      continue
+    let pruned = false
+    for (const { evaluate } of hardTxs) {
+      if (!evaluate(coloring)) {
+        pruned = true
+        break
+      }
     }
-
-    if ((coloring & mustBeRed) !== 0) {
-      continue
-    }
+    if (pruned) continue
 
     let fitness = 0
-
-    for (const pair of dyadicPairs) {
-      fitness += getEquationContribution(coloring, pair.i, pair.j, pair.weight)
-    }
-
-    for (const conditional of conditionals) {
-      if (((coloring >> conditional.conditionIndex) & 1) !== conditional.want) {
-        continue
-      }
-
-      for (const equation of conditional.equations) {
-        fitness += getEquationContribution(coloring, equation.i, equation.j, equation.weight)
-      }
+    for (const { tx, evaluate } of softTxs) {
+      const satisfied = evaluate(coloring)
+      fitness += satisfied ? Math.abs(tx.weight) : -Math.abs(tx.weight)
     }
 
     results.push({ c: coloring, fitness })
@@ -258,87 +130,21 @@ export function buildColoringContributionBreakdown(
   txs: Transaction[],
   coloring: number,
 ): ColoringContribution[] {
-  const positions = buildPositionMap(game)
   const contributions: ColoringContribution[] = []
 
   for (const tx of txs) {
-    if (!tx.enabled) {
-      continue
-    }
+    if (!tx.enabled) continue
 
-    if (tx.kind === 'dyadic') {
-      const i = getPlayerIndex(positions, tx.active)
-      const j = getPlayerIndex(positions, tx.passive)
-      const weight = normalizeEquationWeight(tx.weight)
-      const satisfied = isEquationSatisfied(coloring, i, j, weight)
+    const { evaluate } = prepareTx(tx, game)
+    const satisfied = evaluate(coloring)
 
-      contributions.push({
-        id: `${tx.id}:dyadic`,
-        sourceTxId: tx.id,
-        sourceKind: tx.kind,
-        i: tx.active,
-        j: tx.passive,
-        weight,
-        satisfied,
-        contribution: getEquationContribution(coloring, i, j, weight),
-        active: true,
-      })
-
-      continue
-    }
-
-    if (tx.kind === 'color') {
-      const index = positions.get(tx.playerId)
-
-      if (index !== undefined) {
-        const actualColor = isBlueAt(coloring, index) ? 'blue' : 'red'
-        const satisfied = actualColor === tx.color
-
-        contributions.push({
-          id: `${tx.id}:color`,
-          sourceTxId: tx.id,
-          sourceKind: 'color',
-          i: tx.playerId,
-          j: tx.playerId,
-          fixedColor: tx.color,
-          weight: 0,
-          satisfied,
-          contribution: 0,
-          active: true,
-        })
-      }
-
-      continue
-    }
-
-    const conditionIndex = getPlayerIndex(positions, tx.condition.playerId)
-    const want = tx.condition.color === 'blue' ? 1 : 0
-
-    if (((coloring >> conditionIndex) & 1) !== want) {
-      continue
-    }
-
-    tx.equations.forEach((equation, equationIndex) => {
-      const i = getPlayerIndex(positions, equation.i)
-      const j = getPlayerIndex(positions, equation.j)
-      const weight = normalizeEquationWeight(equation.weight)
-      const satisfied = isEquationSatisfied(coloring, i, j, weight)
-
-      contributions.push({
-        id: `${tx.id}:conditional:${equationIndex}`,
-        sourceTxId: tx.id,
-        sourceKind: tx.kind,
-        i: equation.i,
-        j: equation.j,
-        condition: {
-          playerId: tx.condition.playerId,
-          color: tx.condition.color,
-        },
-        weight,
-        satisfied,
-        contribution: getEquationContribution(coloring, i, j, weight),
-        active: true,
-      })
+    contributions.push({
+      sourceTxId: tx.id,
+      formula: tx.formula,
+      weight: tx.weight,
+      hard: tx.hard,
+      satisfied,
+      contribution: tx.hard ? 0 : (satisfied ? Math.abs(tx.weight) : -Math.abs(tx.weight)),
     })
   }
 

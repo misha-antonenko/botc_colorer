@@ -1,4 +1,4 @@
-import type { ColorTx, ConditionalTx, DyadicTx, Game, Player, Transaction } from '../solver/types'
+import type { Game, LogicalTx, Player, Transaction } from '../solver/types'
 
 export function createPlayers(names: string[]): Player[] {
   return names.map((name, index) => ({
@@ -22,42 +22,17 @@ export function createGameFixture(overrides: Partial<Game> = {}): Game {
   }
 }
 
-export function createDyadicTxFixture(
-  overrides: Partial<DyadicTx> & Pick<DyadicTx, 'active' | 'passive' | 'weight'>,
-): DyadicTx {
+export function createLogicalTxFixture(
+  overrides: Partial<LogicalTx> & Pick<LogicalTx, 'formula'>,
+): LogicalTx {
   return {
     id: `tx-${Math.random().toString(36).slice(2)}`,
-    kind: 'dyadic',
+    kind: 'logical',
     gameId: 'game-1',
     createdAt: 200,
     enabled: true,
-    ...overrides,
-  }
-}
-
-export function createColorTxFixture(
-  overrides: Partial<ColorTx> & Pick<ColorTx, 'playerId' | 'color'>,
-): ColorTx {
-  return {
-    id: `tx-${Math.random().toString(36).slice(2)}`,
-    kind: 'color',
-    gameId: 'game-1',
-    createdAt: 250,
-    enabled: true,
-    ...overrides,
-  }
-}
-
-export function createConditionalTxFixture(
-  overrides: Partial<ConditionalTx> &
-    Pick<ConditionalTx, 'condition' | 'equations'>,
-): ConditionalTx {
-  return {
-    id: `tx-${Math.random().toString(36).slice(2)}`,
-    kind: 'conditional',
-    gameId: 'game-1',
-    createdAt: 300,
-    enabled: true,
+    weight: 1,
+    hard: false,
     ...overrides,
   }
 }

@@ -61,7 +61,7 @@ export function SolutionsTab({ game, txs, results, status, error }: SolutionsTab
         <div className="rounded-3xl border border-dashed border-mist-700 bg-mist-950/60 px-4 py-8 text-center text-mist-300">
           <div className="text-lg font-semibold text-mist-100">No valid colorings</div>
           <p className="mt-2 text-sm text-mist-400">
-            The current blue range and fixed-color constraints exclude every possible assignment.
+            The current blue range and hard constraints exclude every possible assignment.
           </p>
         </div>
       ) : (

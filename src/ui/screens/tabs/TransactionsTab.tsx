@@ -2,12 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteTransaction, saveTransaction, toggleTransaction } from '../../../db/queries'
 import type { Game, Transaction } from '../../../solver/types'
-import {
-  formatConditionSummary,
-  formatSignedNumber,
-  getPlayerName,
-  summarizeTransaction,
-} from '../../formatters'
+import { formatSignedNumber, summarizeTransaction } from '../../formatters'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
 
 interface TransactionsTabProps {
@@ -28,13 +23,15 @@ function parseEditableWeight(value: string): number | null {
 interface WeightEditorProps {
   weight: number
   onCommit: (next: number) => void
+  disabled?: boolean
 }
 
-function WeightEditor({ weight, onCommit }: WeightEditorProps) {
+function WeightEditor({ weight, onCommit, disabled }: WeightEditorProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
   function start() {
+    if (disabled) return
     setDraft(String(weight))
     setEditing(true)
   }
@@ -71,9 +68,10 @@ function WeightEditor({ weight, onCommit }: WeightEditorProps) {
   return (
     <button
       type="button"
-      title="Tap to edit weight"
-      className="rounded px-0.5 text-mist-200 underline decoration-dotted underline-offset-2 hover:bg-mist-700"
+      title={disabled ? 'Hard constraint' : 'Tap to edit weight'}
+      className={`rounded px-0.5 text-mist-200 ${disabled ? '' : 'underline decoration-dotted underline-offset-2 hover:bg-mist-700'}`}
       onClick={start}
+      disabled={disabled}
     >
       {formatSignedNumber(weight)}
     </button>
@@ -150,77 +148,35 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
         if (e.key === 'Enter') startEditing()
       }}
     >
-      Add a note…
+      Add a note...
     </div>
   )
 }
 
 interface TransactionSummaryProps {
-  game: Game
   transaction: Transaction
   isEnabled: boolean
-  onWeightCommit: (getNext: (tx: Transaction) => Transaction) => void
+  onWeightCommit: (nextWeight: number) => void
 }
 
-function TransactionSummary({ game, transaction, isEnabled, onWeightCommit }: TransactionSummaryProps) {
+function TransactionSummary({ transaction, isEnabled, onWeightCommit }: TransactionSummaryProps) {
   const textClass = isEnabled ? 'text-mist-200' : 'line-through text-mist-500'
-
-  if (transaction.kind === 'dyadic') {
-    return (
-      <div className={`text-sm leading-5 ${textClass}`}>
-        {getPlayerName(game, transaction.active)}
-        {' → '}
-        {getPlayerName(game, transaction.passive)}
-        {', w = '}
-        <WeightEditor
-          weight={transaction.weight}
-          onCommit={(w) => onWeightCommit((tx) => ({ ...tx, weight: w } as typeof transaction))}
-        />
-      </div>
-    )
-  }
-
-  if (transaction.kind === 'color') {
-    return (
-      <div className={`text-sm leading-5 ${textClass}`}>
-        {getPlayerName(game, transaction.playerId)}
-        {' is '}
-        {transaction.color}
-      </div>
-    )
-  }
-
-  const conditionStr = formatConditionSummary(
-    game,
-    transaction.condition.playerId,
-    transaction.condition.color,
-  )
 
   return (
     <div className={`text-sm leading-5 ${textClass}`}>
-      {conditionStr}
-      {': '}
-      {transaction.equations.map((eq, index) => (
-        <span key={index}>
-          {index > 0 ? '; ' : ''}
-          {getPlayerName(game, eq.i)}
-          {eq.weight > 0 ? ' = ' : ' ≠ '}
-          {getPlayerName(game, eq.j)}
+      <span className="font-mono">{transaction.formula}</span>
+      {transaction.hard ? (
+        <span className="ml-2 rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">hard</span>
+      ) : (
+        <>
           {', w = '}
           <WeightEditor
-            weight={eq.weight}
-            onCommit={(w) =>
-              onWeightCommit((tx) => {
-                if (tx.kind !== 'conditional') return tx
-                const nextEquations = tx.equations.map((e, i) =>
-                  i === index ? { ...e, weight: w } : e,
-                )
-                return { ...tx, equations: nextEquations }
-              })
-            }
+            weight={transaction.weight}
+            onCommit={onWeightCommit}
+            disabled={transaction.hard}
           />
-        </span>
-      ))}
+        </>
+      )}
     </div>
   )
 }
@@ -281,16 +237,16 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
         <div className="rounded-3xl border border-dashed border-mist-700 bg-mist-950/60 px-4 py-8 text-center text-mist-300">
           <div className="text-lg font-semibold text-mist-100">No transactions yet</div>
           <p className="mt-2 text-sm text-mist-400">
-            Add dyadic, color, or conditional observations to populate the matrix and solutions tabs.
+            Add logical statements to constrain the colorings and populate the solutions tab.
           </p>
         </div>
       ) : (
         txs.map((transaction) => {
           const isEnabled = optimisticEnabled[transaction.id] ?? transaction.enabled
 
-          async function handleWeightCommit(getNext: (tx: Transaction) => Transaction) {
+          async function handleWeightCommit(nextWeight: number) {
             try {
-              await saveTransaction(getNext(transaction))
+              await saveTransaction({ ...transaction, weight: nextWeight })
             } catch (saveError) {
               setError(
                 saveError instanceof Error ? saveError.message : 'Failed to update weight.',
@@ -308,10 +264,9 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <TransactionSummary
-                      game={game}
                       transaction={transaction}
                       isEnabled={isEnabled}
-                      onWeightCommit={(getNext) => void handleWeightCommit(getNext)}
+                      onWeightCommit={(w) => void handleWeightCommit(w)}
                     />
                     <NoteEditor transaction={transaction} isEnabled={isEnabled} />
                   </div>

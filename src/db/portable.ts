@@ -3,7 +3,6 @@ import type { Game, PortableImportResult, PortablePayload, Transaction } from '.
 import { CURRENT_VERSION, applyMigrations } from './migrations'
 import { db, decodeGameRow, decodeTransactionRow, encodeGameRow, encodeTransactionRow } from './schema'
 
-const colorSchema = z.enum(['blue', 'red'])
 const nonZeroNumber = z.number().finite().refine((value) => value !== 0, {
   message: 'Expected a nonzero number',
 })
@@ -23,12 +22,6 @@ const gameSchema = z.object({
   players: z.array(playerSchema).min(1).max(16),
 })
 
-const equationSchema = z.object({
-  i: z.string().min(1),
-  j: z.string().min(1),
-  weight: nonZeroNumber,
-})
-
 const baseTxSchema = z.object({
   id: z.string().min(1),
   gameId: z.string().min(1),
@@ -37,29 +30,14 @@ const baseTxSchema = z.object({
   note: z.string().optional(),
 })
 
-const dyadicSchema = baseTxSchema.extend({
-  kind: z.literal('dyadic'),
-  active: z.string().min(1),
-  passive: z.string().min(1),
+const logicalSchema = baseTxSchema.extend({
+  kind: z.literal('logical'),
+  formula: z.string().min(1),
   weight: nonZeroNumber,
+  hard: z.boolean(),
 })
 
-const conditionalSchema = baseTxSchema.extend({
-  kind: z.literal('conditional'),
-  condition: z.object({
-    playerId: z.string().min(1),
-    color: colorSchema,
-  }),
-  equations: z.array(equationSchema).min(1),
-})
-
-const colorTxSchema = baseTxSchema.extend({
-  kind: z.literal('color'),
-  playerId: z.string().min(1),
-  color: colorSchema,
-})
-
-const transactionSchema = z.discriminatedUnion('kind', [dyadicSchema, colorTxSchema, conditionalSchema])
+const transactionSchema = logicalSchema
 
 const portablePayloadSchema = z.object({
   version: z.literal(CURRENT_VERSION),
@@ -90,44 +68,11 @@ function assertPortableRelationships(payload: PortablePayload): void {
     'transaction',
   )
 
-  const playerIdsByGameId = new Map<string, Set<string>>()
-
-  for (const game of payload.games) {
-    playerIdsByGameId.set(
-      game.id,
-      new Set(game.players.map((player) => player.id)),
-    )
-  }
+  const gameIds = new Set(payload.games.map((game) => game.id))
 
   for (const transaction of payload.transactions) {
-    const playerIds = playerIdsByGameId.get(transaction.gameId)
-
-    if (playerIds === undefined) {
+    if (!gameIds.has(transaction.gameId)) {
       throw new Error(`Transaction ${transaction.id} references missing game ${transaction.gameId}`)
-    }
-
-    if (transaction.kind === 'dyadic') {
-      if (!playerIds.has(transaction.active) || !playerIds.has(transaction.passive)) {
-        throw new Error(`Transaction ${transaction.id} references missing players`)
-      }
-      continue
-    }
-
-    if (transaction.kind === 'color') {
-      if (!playerIds.has(transaction.playerId)) {
-        throw new Error(`Transaction ${transaction.id} references missing player`)
-      }
-      continue
-    }
-
-    if (!playerIds.has(transaction.condition.playerId)) {
-      throw new Error(`Transaction ${transaction.id} references missing condition player`)
-    }
-
-    for (const equation of transaction.equations) {
-      if (!playerIds.has(equation.i) || !playerIds.has(equation.j)) {
-        throw new Error(`Transaction ${transaction.id} references missing equation players`)
-      }
     }
   }
 }

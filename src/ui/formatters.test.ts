@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { createColorTxFixture, createGameFixture, createPlayers } from '../test/fixtures'
+import { createGameFixture, createLogicalTxFixture, createPlayers } from '../test/fixtures'
 import { getPlayerCellLabel, summarizeTransaction } from './formatters'
 
-describe('summarizeTransaction (color kind)', () => {
-  it('formats a color transaction as "Player is blue"', () => {
+describe('summarizeTransaction', () => {
+  it('formats a soft logical transaction', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players })
-    const tx = createColorTxFixture({ gameId: game.id, playerId: players[0].id, color: 'blue' })
+    const tx = createLogicalTxFixture({ formula: 'Al ^ Bob', weight: 2, gameId: game.id })
 
-    expect(summarizeTransaction(game, tx)).toBe('Alice is blue')
+    expect(summarizeTransaction(game, tx)).toBe('Al ^ Bob, w = +2')
   })
 
-  it('formats a color transaction as "Player is red"', () => {
+  it('formats a hard logical transaction', () => {
     const players = createPlayers(['Alice', 'Bob'])
     const game = createGameFixture({ players })
-    const tx = createColorTxFixture({ gameId: game.id, playerId: players[1].id, color: 'red' })
+    const tx = createLogicalTxFixture({ formula: '~Alice', weight: 1, hard: true, gameId: game.id })
 
-    expect(summarizeTransaction(game, tx)).toBe('Bob is red')
+    expect(summarizeTransaction(game, tx)).toBe('~Alice, w = +1 [hard]')
   })
 })
 

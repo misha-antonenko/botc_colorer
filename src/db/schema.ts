@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { ColorTx, ConditionalTx, DyadicTx, Game, Transaction } from '../solver/types'
-import { buildColorTxesFromPlayers, type V1Player } from './migrations'
+import type { Game, LogicalTx, Transaction } from '../solver/types'
+import { buildColorTxesFromPlayers, convertV2TxToLogical, type V1Player } from './migrations'
 
 export interface GameRow {
   id: string
@@ -34,7 +34,7 @@ export class BotcDatabase extends Dexie {
     })
 
     this.version(2).upgrade(async (trans) => {
-      const gameRows = await trans.table('games').toArray() as GameRow[]
+      const gameRows = (await trans.table('games').toArray()) as GameRow[]
 
       for (const gameRow of gameRows) {
         const players = JSON.parse(gameRow.playersJSON) as V1Player[]
@@ -44,11 +44,46 @@ export class BotcDatabase extends Dexie {
           continue
         }
 
-        await trans.table('transactions').bulkAdd(colorTxes.map(encodeTransactionRow))
+        await trans.table('transactions').bulkAdd(colorTxes.map((tx) => ({
+          id: tx.id,
+          gameId: tx.gameId,
+          kind: tx.kind,
+          enabled: tx.enabled,
+          createdAt: tx.createdAt,
+          payloadJSON: JSON.stringify(tx),
+        })))
 
         const nulledPlayers = players.map((player) => ({ ...player, fixedColor: null }))
-        await trans.table('games').update(gameRow.id, { playersJSON: JSON.stringify(nulledPlayers) })
+        await trans
+          .table('games')
+          .update(gameRow.id, { playersJSON: JSON.stringify(nulledPlayers) })
       }
+    })
+
+    this.version(3).upgrade(async (trans) => {
+      const gameRows = (await trans.table('games').toArray()) as GameRow[]
+      const games = gameRows.map((row) => ({
+        id: row.id,
+        players: JSON.parse(row.playersJSON) as Array<{ id: string; name: string }>,
+      }))
+
+      const txRows = (await trans.table('transactions').toArray()) as TransactionRow[]
+      const deleteIds: string[] = []
+      const addRows: TransactionRow[] = []
+
+      for (const row of txRows) {
+        const payload = JSON.parse(row.payloadJSON)
+        const v2Tx = { ...payload, id: row.id, gameId: row.gameId, kind: row.kind, enabled: row.enabled, createdAt: row.createdAt }
+        const logicalTxs = convertV2TxToLogical(v2Tx, games)
+
+        deleteIds.push(row.id)
+        for (const ltx of logicalTxs) {
+          addRows.push(encodeTransactionRow(ltx))
+        }
+      }
+
+      await trans.table('transactions').bulkDelete(deleteIds)
+      await trans.table('transactions').bulkAdd(addRows)
     })
   }
 }
@@ -91,39 +126,13 @@ export function encodeTransactionRow(transaction: Transaction): TransactionRow {
 }
 
 export function decodeTransactionRow(row: TransactionRow): Transaction {
-  if (row.kind === 'dyadic') {
-    const payload = JSON.parse(row.payloadJSON) as DyadicTx
-
-    return {
-      ...payload,
-      id: row.id,
-      gameId: row.gameId,
-      kind: 'dyadic',
-      enabled: row.enabled,
-      createdAt: row.createdAt,
-    }
-  }
-
-  if (row.kind === 'color') {
-    const payload = JSON.parse(row.payloadJSON) as ColorTx
-
-    return {
-      ...payload,
-      id: row.id,
-      gameId: row.gameId,
-      kind: 'color',
-      enabled: row.enabled,
-      createdAt: row.createdAt,
-    }
-  }
-
-  const payload = JSON.parse(row.payloadJSON) as ConditionalTx
+  const payload = JSON.parse(row.payloadJSON) as LogicalTx
 
   return {
     ...payload,
     id: row.id,
     gameId: row.gameId,
-    kind: 'conditional',
+    kind: 'logical',
     enabled: row.enabled,
     createdAt: row.createdAt,
   }

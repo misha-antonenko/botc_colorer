@@ -1,17 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import { createDyadicTxFixture, createGameFixture, createPlayers } from '../../../test/fixtures'
+import { createGameFixture, createLogicalTxFixture, createPlayers } from '../../../test/fixtures'
 import { TransactionsTab } from './TransactionsTab'
 
 describe('TransactionsTab', () => {
-  it('renders transaction notes beneath the summary text', () => {
+  it('renders transaction notes beneath the formula text', () => {
     const players = createPlayers(['Alice', 'Bob', 'Carol'])
     const game = createGameFixture({ players })
-    const tx = createDyadicTxFixture({
+    const tx = createLogicalTxFixture({
       gameId: game.id,
-      active: players[0].id,
-      passive: players[1].id,
+      formula: 'Al = Bob',
       weight: 2,
       note: 'Clockmaker info',
     })
@@ -23,8 +22,7 @@ describe('TransactionsTab', () => {
     )
 
     expect(screen.getByText('Clockmaker info')).toBeInTheDocument()
-    // Summary is split across elements: static text + a weight button
-    expect(screen.getByText(/Alice → Bob, w =/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '+2' })).toBeInTheDocument()
+    expect(screen.getByText('Al = Bob')).toBeInTheDocument()
+    expect(screen.getByTitle('Tap to edit weight')).toHaveTextContent('+2')
   })
 })

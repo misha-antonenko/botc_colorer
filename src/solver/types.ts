@@ -20,12 +20,6 @@ export interface Game {
   players: Player[]
 }
 
-export interface Equation {
-  i: PlayerId
-  j: PlayerId
-  weight: number
-}
-
 export interface BaseTx {
   id: TxId
   gameId: GameId
@@ -34,29 +28,14 @@ export interface BaseTx {
   note?: string
 }
 
-export interface DyadicTx extends BaseTx {
-  kind: 'dyadic'
-  active: PlayerId
-  passive: PlayerId
+export interface LogicalTx extends BaseTx {
+  kind: 'logical'
+  formula: string
   weight: number
+  hard: boolean
 }
 
-export interface ColorTx extends BaseTx {
-  kind: 'color'
-  playerId: PlayerId
-  color: Color
-}
-
-export interface ConditionalTx extends BaseTx {
-  kind: 'conditional'
-  condition: {
-    playerId: PlayerId
-    color: Color
-  }
-  equations: Equation[]
-}
-
-export type Transaction = DyadicTx | ColorTx | ConditionalTx
+export type Transaction = LogicalTx
 
 export interface SolverResult {
   c: number
@@ -76,26 +55,17 @@ export interface SolveResponse {
 }
 
 export interface ColoringContribution {
-  id: string
   sourceTxId: TxId
-  sourceKind: Transaction['kind']
-  i: PlayerId
-  j: PlayerId
-  condition?: {
-    playerId: PlayerId
-    color: Color
-  }
-  /** Set for color-constraint contributions; absent for equation contributions. */
-  fixedColor?: Color
+  formula: string
   weight: number
+  hard: boolean
   satisfied: boolean
   contribution: number
-  active: boolean
 }
 
 /** Must match CURRENT_VERSION in src/db/migrations.ts. */
 export interface PortablePayload {
-  version: 2
+  version: 3
   exportedAt: number
   games: Game[]
   transactions: Transaction[]
