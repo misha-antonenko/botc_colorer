@@ -49,6 +49,27 @@ test('mobile workflow updates solutions when a transaction is disabled', async (
   expect(firstSolutionAfter).not.toEqual(firstSolutionBefore)
 })
 
+test('inline formula editing shows validation error for invalid formula', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'New game' }).click()
+
+  await page.getByLabel('Player 1 name').fill('Alice')
+  await page.getByLabel('Player 2 name').fill('Bob')
+
+  await page.getByRole('button', { name: 'Transactions' }).click()
+  await page.getByRole('link', { name: 'Add transaction' }).click()
+  await page.getByLabel('Formula').fill('Alice')
+  await page.getByRole('button', { name: 'Save transaction' }).click()
+
+  await page.getByText('Alice').click()
+  const input = page.getByLabel('Edit formula')
+  await input.fill('Unknown')
+  await input.blur()
+
+  await expect(page.getByText(/Unknown player prefix/)).toBeVisible()
+  await expect(page.locator('article').first()).toHaveClass(/border-red-700/)
+})
+
 test('game export triggers a download', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'New game' }).click()

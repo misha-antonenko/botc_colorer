@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteTransaction, saveTransaction, toggleTransaction } from '../../../db/queries'
+import { formatFormula, resolveFormula, validateFormula } from '../../../solver/formula'
 import type { Game, Transaction } from '../../../solver/types'
 import { formatSignedNumber, summarizeTransaction } from '../../formatters'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
@@ -12,6 +13,103 @@ interface TransactionsTabProps {
 
 interface UndoState {
   tx: Transaction
+}
+
+interface FormulaEditorProps {
+  game: Game
+  transaction: Transaction
+  isEnabled: boolean
+  validationError: string | null
+  onValidationErrorChange: (error: string | null) => void
+}
+
+function FormulaEditor({
+  game,
+  transaction,
+  isEnabled,
+  validationError,
+  onValidationErrorChange,
+}: FormulaEditorProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  function startEditing() {
+    setDraft(transaction.formula)
+    setEditing(true)
+    onValidationErrorChange(null)
+  }
+
+  async function commit() {
+    setEditing(false)
+    const trimmed = draft.trim()
+
+    if (trimmed === '' || trimmed === transaction.formula) {
+      onValidationErrorChange(null)
+      return
+    }
+
+    const result = validateFormula(trimmed, game.players)
+    if (!result.ok) {
+      onValidationErrorChange(result.error)
+      return
+    }
+
+    const resolved = resolveFormula(trimmed, game.players)
+    const formattedFormula = formatFormula(resolved.ast, resolved.playerMap)
+    onValidationErrorChange(null)
+    await saveTransaction({ ...transaction, formula: formattedFormula })
+  }
+
+  const hasError = validationError !== null
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        aria-label="Edit formula"
+        className={`w-full rounded border px-1 py-0 font-mono text-sm ${
+          hasError
+            ? 'border-red-500 bg-red-950/50 text-red-200'
+            : 'border-mist-600 bg-mist-800 text-mist-100'
+        }`}
+        type="text"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => void commit()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') {
+            setEditing(false)
+            onValidationErrorChange(null)
+          }
+        }}
+      />
+    )
+  }
+
+  const textClass = hasError
+    ? 'text-red-400'
+    : isEnabled
+      ? 'text-mist-200'
+      : 'line-through text-mist-500'
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title="Tap to edit formula"
+      className={`cursor-text font-mono underline decoration-dotted underline-offset-2 hover:bg-mist-700/50 ${textClass}`}
+      onClick={startEditing}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') startEditing()
+      }}
+    >
+      {transaction.formula}
+    </span>
+  )
 }
 
 interface NoteEditorProps {
@@ -90,16 +188,31 @@ function NoteEditor({ transaction, isEnabled }: NoteEditorProps) {
 }
 
 interface TransactionSummaryProps {
+  game: Game
   transaction: Transaction
   isEnabled: boolean
+  validationError: string | null
+  onValidationErrorChange: (error: string | null) => void
 }
 
-function TransactionSummary({ transaction, isEnabled }: TransactionSummaryProps) {
+function TransactionSummary({
+  game,
+  transaction,
+  isEnabled,
+  validationError,
+  onValidationErrorChange,
+}: TransactionSummaryProps) {
   const textClass = isEnabled ? 'text-mist-200' : 'line-through text-mist-500'
 
   return (
     <div className={`text-sm leading-5 ${textClass}`}>
-      <span className="font-mono">{transaction.formula}</span>
+      <FormulaEditor
+        game={game}
+        transaction={transaction}
+        isEnabled={isEnabled}
+        validationError={validationError}
+        onValidationErrorChange={onValidationErrorChange}
+      />
       {transaction.hard ? (
         <span className="ml-2 rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">hard</span>
       ) : transaction.weight !== 1 ? (
@@ -116,6 +229,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
   const [undoState, setUndoState] = useState<UndoState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [optimisticEnabled, setOptimisticEnabled] = useState<Record<string, boolean>>({})
+  const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({})
   const timeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -174,6 +288,7 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
       ) : (
         txs.map((transaction) => {
           const isEnabled = optimisticEnabled[transaction.id] ?? transaction.enabled
+          const validationError = validationErrors[transaction.id] ?? null
 
           return (
             <SwipeActionRow
@@ -181,13 +296,25 @@ export function TransactionsTab({ game, txs }: TransactionsTabProps) {
               deleteLabel={`Delete ${summarizeTransaction(game, transaction)}`}
               onDelete={() => void handleDelete(transaction.id)}
             >
-              <article className="rounded-3xl border border-mist-800 bg-mist-950/80 px-3 py-3 shadow-lg shadow-mist-950/30">
+              <article
+                className={`rounded-3xl border bg-mist-950/80 px-3 py-3 shadow-lg shadow-mist-950/30 ${
+                  validationError !== null ? 'border-red-700' : 'border-mist-800'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <TransactionSummary
+                      game={game}
                       transaction={transaction}
                       isEnabled={isEnabled}
+                      validationError={validationError}
+                      onValidationErrorChange={(err) =>
+                        setValidationErrors((current) => ({ ...current, [transaction.id]: err }))
+                      }
                     />
+                    {validationError !== null ? (
+                      <div className="mt-1 text-xs text-red-400">{validationError}</div>
+                    ) : null}
                     <NoteEditor transaction={transaction} isEnabled={isEnabled} />
                   </div>
 
