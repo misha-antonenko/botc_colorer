@@ -27,6 +27,11 @@ export function formatSignedNumber(value: number): string {
   return value > 0 ? `+${normalized}` : normalized
 }
 
+export function formatWeight(weight: number): string {
+  if (weight === 1) return ''
+  return `, w = ${formatSignedNumber(weight)}`
+}
+
 export function formatMagnitude(value: number): string {
   return trimTrailingZeros(Math.abs(value))
 }
@@ -64,7 +69,7 @@ export function getPlayerCellLabel(name: string): string {
 
 export function summarizeTransaction(_game: Game, transaction: Transaction): string {
   const hardTag = transaction.hard ? ' [hard]' : ''
-  return `${transaction.formula}, w = ${formatSignedNumber(transaction.weight)}${hardTag}`
+  return `${transaction.formula}${formatWeight(transaction.weight)}${hardTag}`
 }
 
 export function formatTimestamp(timestamp: number): string {

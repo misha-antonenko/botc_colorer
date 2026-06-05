@@ -30,7 +30,7 @@ export function StateTab({ game, txs }: StateTabProps) {
             {hardTxs.map((tx) => (
               <div
                 key={tx.id}
-                className="rounded-2xl border border-mist-800 bg-mist-900/70 px-3 py-3 font-mono text-sm text-mist-200"
+                className="rounded-2xl border border-mist-800 bg-mist-900/70 px-3 py-3 text-sm text-mist-200"
               >
                 {tx.formula}
                 {tx.note !== undefined && (

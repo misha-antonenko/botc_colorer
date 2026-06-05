@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { deleteTransaction, saveTransaction, toggleTransaction } from '../../../db/queries'
 import { formatFormula, resolveFormula, validateFormula } from '../../../solver/formula'
 import type { Game, Transaction } from '../../../solver/types'
-import { formatSignedNumber, summarizeTransaction } from '../../formatters'
+import { formatWeight, summarizeTransaction } from '../../formatters'
 import { SwipeActionRow } from '../../components/SwipeActionRow'
 
 interface TransactionsTabProps {
@@ -232,11 +232,8 @@ function TransactionSummary({
           soft
         </button>
       )}
-      {!transaction.hard && transaction.weight !== 1 ? (
-        <span className="ml-1 text-mist-400">
-          {', w = '}
-          {formatSignedNumber(transaction.weight)}
-        </span>
+      {!transaction.hard && formatWeight(transaction.weight) !== '' ? (
+        <span className="ml-1 text-mist-400">{formatWeight(transaction.weight)}</span>
       ) : null}
     </div>
   )

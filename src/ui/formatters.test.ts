@@ -16,7 +16,15 @@ describe('summarizeTransaction', () => {
     const game = createGameFixture({ players })
     const tx = createLogicalTxFixture({ formula: '~Alice', weight: 1, hard: true, gameId: game.id })
 
-    expect(summarizeTransaction(game, tx)).toBe('~Alice, w = +1 [hard]')
+    expect(summarizeTransaction(game, tx)).toBe('~Alice [hard]')
+  })
+
+  it('hides weight when it is 1', () => {
+    const players = createPlayers(['Alice', 'Bob'])
+    const game = createGameFixture({ players })
+    const tx = createLogicalTxFixture({ formula: 'Al', weight: 1, gameId: game.id })
+
+    expect(summarizeTransaction(game, tx)).toBe('Al')
   })
 })
 
