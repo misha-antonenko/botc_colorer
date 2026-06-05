@@ -214,8 +214,25 @@ function TransactionSummary({
         onValidationErrorChange={onValidationErrorChange}
       />
       {transaction.hard ? (
-        <span className="ml-2 rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">hard</span>
-      ) : transaction.weight !== 1 ? (
+        <button
+          type="button"
+          title="Tap to make soft"
+          className="ml-2 rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300 hover:bg-amber-800/50"
+          onClick={() => void saveTransaction({ ...transaction, hard: false })}
+        >
+          hard
+        </button>
+      ) : (
+        <button
+          type="button"
+          title="Tap to make hard"
+          className="ml-2 rounded bg-mist-800 px-1.5 py-0.5 text-xs text-mist-400 hover:bg-mist-700"
+          onClick={() => void saveTransaction({ ...transaction, hard: true })}
+        >
+          soft
+        </button>
+      )}
+      {!transaction.hard && transaction.weight !== 1 ? (
         <span className="ml-1 text-mist-400">
           {', w = '}
           {formatSignedNumber(transaction.weight)}
