@@ -101,7 +101,7 @@ function FormulaEditor({
       role="button"
       tabIndex={0}
       title="Tap to edit formula"
-      className={`cursor-text  underline decoration-dotted underline-offset-2 hover:bg-mist-700/50 ${textClass}`}
+      className={`cursor-text hover:bg-mist-700/50 ${textClass}`}
       onClick={startEditing}
       onKeyDown={(e) => {
         if (e.key === 'Enter') startEditing()
