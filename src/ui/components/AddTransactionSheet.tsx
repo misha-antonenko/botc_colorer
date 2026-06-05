@@ -105,7 +105,7 @@ function AddTransactionSheetForm({ game }: { game: Game }) {
               <span>Formula</span>
               <input
                 aria-label="Formula"
-                className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 font-mono text-base text-mist-100"
+                className="rounded-xl border border-mist-700 bg-mist-900 px-3 py-2 text-base text-mist-100"
                 type="text"
                 autoCapitalize="off"
                 autoCorrect="off"

@@ -84,13 +84,13 @@ export function ColoringRow({
                 className="rounded-xl border border-mist-800 bg-mist-950/80 px-3 py-2 text-sm text-mist-200"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono">{contribution.formula}</span>
+                  <span className="">{contribution.formula}</span>
                   {contribution.hard ? (
                     <span className="rounded bg-amber-900/50 px-1.5 py-0.5 text-xs text-amber-300">
                       hard
                     </span>
                   ) : (
-                    <span className="font-mono text-mist-300">
+                    <span className="text-mist-300">
                       {formatSignedNumber(contribution.contribution)}
                     </span>
                   )}

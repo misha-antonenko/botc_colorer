@@ -67,7 +67,7 @@ function FormulaEditor({
       <input
         autoFocus
         aria-label="Edit formula"
-        className={`w-full rounded border px-1 py-0 font-mono text-sm ${
+        className={`w-full rounded border px-1 py-0  text-sm ${
           hasError
             ? 'border-red-500 bg-red-950/50 text-red-200'
             : 'border-mist-600 bg-mist-800 text-mist-100'
@@ -101,7 +101,7 @@ function FormulaEditor({
       role="button"
       tabIndex={0}
       title="Tap to edit formula"
-      className={`cursor-text font-mono underline decoration-dotted underline-offset-2 hover:bg-mist-700/50 ${textClass}`}
+      className={`cursor-text  underline decoration-dotted underline-offset-2 hover:bg-mist-700/50 ${textClass}`}
       onClick={startEditing}
       onKeyDown={(e) => {
         if (e.key === 'Enter') startEditing()
