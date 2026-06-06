@@ -32,11 +32,11 @@ function FormulaEditor({
 }: FormulaEditorProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  const [invalidDraft, setInvalidDraft] = useState<string | null>(null)
 
   function startEditing() {
-    setDraft(transaction.formula)
+    setDraft(invalidDraft ?? transaction.formula)
     setEditing(true)
-    onValidationErrorChange(null)
   }
 
   async function commit() {
@@ -45,22 +45,32 @@ function FormulaEditor({
 
     if (trimmed === '' || trimmed === transaction.formula) {
       onValidationErrorChange(null)
+      setInvalidDraft(null)
       return
     }
 
     const result = validateFormula(trimmed, game.players)
     if (!result.ok) {
       onValidationErrorChange(result.error)
+      setInvalidDraft(trimmed)
       return
     }
 
     const resolved = resolveFormula(trimmed, game.players)
     const formattedFormula = formatFormula(resolved.ast, resolved.playerMap)
     onValidationErrorChange(null)
+    setInvalidDraft(null)
     await saveTransaction({ ...transaction, formula: formattedFormula })
   }
 
+  function cancel() {
+    setEditing(false)
+    onValidationErrorChange(null)
+    setInvalidDraft(null)
+  }
+
   const hasError = validationError !== null
+  const displayText = invalidDraft ?? transaction.formula
 
   if (editing) {
     return (
@@ -81,10 +91,7 @@ function FormulaEditor({
         onBlur={() => void commit()}
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur()
-          if (e.key === 'Escape') {
-            setEditing(false)
-            onValidationErrorChange(null)
-          }
+          if (e.key === 'Escape') cancel()
         }}
       />
     )
@@ -107,7 +114,7 @@ function FormulaEditor({
         if (e.key === 'Enter') startEditing()
       }}
     >
-      {transaction.formula}
+      {displayText}
     </span>
   )
 }

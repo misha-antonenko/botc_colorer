@@ -1,9 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { createGameFixture, createLogicalTxFixture, createPlayers } from '../../../test/fixtures'
 import { TransactionsTab } from './TransactionsTab'
+
+afterEach(() => {
+  cleanup()
+})
 
 describe('TransactionsTab', () => {
   it('renders transaction notes beneath the formula text', () => {
@@ -96,5 +100,65 @@ describe('TransactionsTab', () => {
     await userEvent.tab()
 
     expect(screen.getByText(/Unknown player prefix/)).toBeInTheDocument()
+  })
+
+  it('preserves invalid formula draft after validation failure', async () => {
+    const players = createPlayers(['Charlie', 'Dana'])
+    const game = createGameFixture({ players })
+    const tx = createLogicalTxFixture({
+      gameId: game.id,
+      formula: 'Cha',
+      weight: 1,
+    })
+
+    render(
+      <MemoryRouter>
+        <TransactionsTab game={game} txs={[tx]} />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByText('Cha'))
+    const input = screen.getByLabelText('Edit formula')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Invalid')
+    await userEvent.tab()
+
+    expect(screen.getByText(/Unknown player prefix/)).toBeInTheDocument()
+    expect(screen.getByText('Invalid')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByText('Invalid'))
+    const inputAfterReopen = screen.getByLabelText('Edit formula')
+    expect(inputAfterReopen).toHaveValue('Invalid')
+  })
+
+  it('clears invalid draft on escape', async () => {
+    const players = createPlayers(['Eve', 'Frank'])
+    const game = createGameFixture({ players })
+    const tx = createLogicalTxFixture({
+      gameId: game.id,
+      formula: 'Eve',
+      weight: 1,
+    })
+
+    render(
+      <MemoryRouter>
+        <TransactionsTab game={game} txs={[tx]} />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByText('Eve'))
+    const input = screen.getByLabelText('Edit formula')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Invalid')
+    await userEvent.tab()
+
+    expect(screen.getByText('Invalid')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByText('Invalid'))
+    screen.getByLabelText('Edit formula')
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.getByText('Eve')).toBeInTheDocument()
+    expect(screen.queryByText('Invalid')).not.toBeInTheDocument()
   })
 })
